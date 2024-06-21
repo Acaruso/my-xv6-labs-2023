@@ -202,6 +202,236 @@
 
 
 
+// #include "kernel/types.h"
+// #include "kernel/stat.h"
+// #include "kernel/fcntl.h"
+// #include "user/user.h"
+
+// void source();
+// void cull(int p);
+// void redirect(int k, int pd[2]);
+// void sink();
+
+// void log(char* str);
+
+// int main() {
+//     log("main");
+
+//     int pd[2];
+//     pipe(pd);
+
+//     if (fork()) {
+//         redirect(0, pd);
+//         sink();
+//     } else {
+//         redirect(1, pd);
+//         source();
+//     }
+// }
+
+// void source() {
+//     for (int i = 2; i <= 35; i++) {
+//         write(1, &i, sizeof(i));
+//     }
+// }
+
+// void sink() {
+//     int pd[2];
+//     int p;
+
+//     while (1) {
+//         read(0, &p, sizeof(p));
+//         printf("p: %d\n", p);
+//         pipe(pd);
+//         if (fork()) {
+//             redirect(0, pd);
+//             continue;
+//         } else {
+//             redirect(1, pd);
+//             cull(p);
+//         }
+//     }
+// }
+
+// void cull(int p) {
+//     int n;
+//     while (1) {
+//         read(0, &n, sizeof(n));
+//         if (n % p != 0) {
+//             write(1, &n, sizeof(n));
+//         }
+//     }
+// }
+
+// // redirect `stdin` or `stdout` to the pipe
+// // if fd == 0, redirect `stdin` to `p[0]`
+// // if fd == 1, redirect `stdout` to `p[1]`
+// // in either case, close `pd[0]` and `pd[1]`
+// void redirect(int fd, int pd[2]) {
+//     close(fd);
+//     dup(pd[fd]);
+//     close(pd[0]);
+//     close(pd[1]);
+// }
+
+// // logging stuff /////////////////////////////////////////
+
+// void get_filename(int pid, char* buf);
+// char digit_to_char(int digit);
+
+// void log(char* str) {
+//     char filename[16];
+//     int pid = getpid();
+//     get_filename(pid, filename);
+//     int fd = open(filename, O_WRONLY | O_CREATE);
+//     fprintf(fd, str);
+//     close(fd);
+// }
+
+// void get_filename(int pid, char* buf) {
+//     int i = 0;
+//     while (pid > 0) {
+//         int digit = pid % 10;
+//         buf[i++] = digit_to_char(digit);
+//         pid = pid / 10;
+//     }
+//     buf[i++] = '.';
+//     buf[i++] = 't';
+//     buf[i++] = 'x';
+//     buf[i++] = 't';
+//     buf[i++] = '\0';
+// }
+
+// char digit_to_char(int digit) {
+//     return '0' + digit;
+// }
+
+
+
+
+
+
+
+
+// #include "kernel/types.h"
+// #include "kernel/stat.h"
+// #include "kernel/fcntl.h"
+// #include "user/user.h"
+
+// void source();
+// void cull(int p);
+// void redirect(int k, int pd[2]);
+// void sink();
+
+// void log(char* str);
+
+// int main() {
+//     log("main");
+
+//     int pd[2];
+//     pipe(pd);
+
+//     if (fork()) {
+//         redirect(0, pd);            // read
+//         sink();
+//     } else {
+//         redirect(1, pd);            // write
+//         source();
+//     }
+// }
+
+// void source() {
+//     log("source");
+//     for (int i = 2; i <= 35; i++) {
+//         write(1, &i, sizeof(i));
+//     }
+// }
+
+// void sink() {
+//     log("sink");
+//     int p;
+
+//     while (read(0, &p, sizeof(p))) {
+//         printf("p: %d\n", p);
+
+//         int pd[2];
+//         pipe(pd);
+
+//         if (fork()) {
+//             redirect(0, pd);        // read
+//             continue;
+//         } else {
+//             redirect(1, pd);        // write
+//             cull(p);
+//         }
+//     }
+// }
+
+// void cull(int p) {
+//     log("cull");
+//     int n;
+//     while (read(0, &n, sizeof(n))) {
+//         if (n % p != 0) {
+//             write(1, &n, sizeof(n));
+//         }
+//     }
+// }
+
+// // redirect `stdin` or `stdout` to the pipe
+// // if fd == 0, redirect `stdin` to `p[0]`
+// // if fd == 1, redirect `stdout` to `p[1]`
+// // in either case, close `pd[0]` and `pd[1]`
+// void redirect(int fd, int pd[2]) {
+//     close(fd);
+//     dup(pd[fd]);
+//     close(pd[0]);
+//     close(pd[1]);
+// }
+
+// // logging stuff /////////////////////////////////////////
+
+// void get_filename(int pid, char* buf);
+// char digit_to_char(int digit);
+
+// void log(char* str) {
+//     char filename[16];
+//     int pid = getpid();
+//     get_filename(pid, filename);
+//     int fd = open(filename, O_WRONLY | O_CREATE);
+//     fprintf(fd, str);
+//     fprintf(fd, "\n");
+//     close(fd);
+// }
+
+// void get_filename(int pid, char* buf) {
+//     int num_digits = pid / 10;
+//     int i = num_digits;
+//     while (pid > 0 && i >= 0) {
+//         int digit = pid % 10;
+//         buf[i--] = digit_to_char(digit);
+//         pid = pid / 10;
+//     }
+//     i = num_digits + 1;
+//     buf[i++] = '.';
+//     buf[i++] = 't';
+//     buf[i++] = 'x';
+//     buf[i++] = 't';
+//     buf[i++] = '\0';
+// }
+
+// char digit_to_char(int digit) {
+//     return '0' + digit;
+// }
+
+
+
+
+
+
+
+
+
+
 #include "kernel/types.h"
 #include "kernel/stat.h"
 #include "kernel/fcntl.h"
@@ -209,122 +439,62 @@
 
 void source();
 void cull(int p);
-void redirect(int k, int pd[2]);
+void connect(int pd[2], int fd);
 void sink();
 
-void log(char* str);
+const int STDIN = 0;
+const int STDOUT = 1;
 
 int main() {
-    log("main");
-    exit(0);
-
     int pd[2];
     pipe(pd);
 
-    if (fork()) {
-        redirect(0, pd);
-        sink();
-    } else {
-        redirect(1, pd);
+    if (fork() == 0) {
+        connect(pd, STDOUT);
         source();
+    } else {
+        connect(pd, STDIN);
+        sink();
     }
 }
 
 void source() {
     for (int i = 2; i <= 35; i++) {
-        write(1, &i, sizeof(i));
+        write(STDOUT, &i, sizeof(i));
     }
 }
 
 void sink() {
-    int pd[2];
     int p;
 
-    while (1) {
-        read(0, &p, sizeof(p));
+    while (read(STDIN, &p, sizeof(p))) {
         printf("p: %d\n", p);
-        pipe(pd);
-        if (fork()) {
-            redirect(0, pd);
-            continue;
-        } else {
-            redirect(1, pd);
+
+        int new_pipe[2];
+        pipe(new_pipe);
+
+        if (fork() == 0) {
+            connect(new_pipe, STDOUT);
             cull(p);
+        } else {
+            connect(new_pipe, STDIN);
+            continue;
         }
     }
 }
 
 void cull(int p) {
     int n;
-    while (1) {
-        read(0, &n, sizeof(n));
+    while (read(STDIN, &n, sizeof(n))) {
         if (n % p != 0) {
-            write(1, &n, sizeof(n));
+            write(STDOUT, &n, sizeof(n));
         }
     }
 }
 
-// redirect `stdin` or `stdout` to the pipe
-// if fd == 0, redirect `stdin` to `p[0]`
-// if fd == 1, redirect `stdout` to `p[1]`
-// in either case, close `pd[0]` and `pd[1]`
-void redirect(int fd, int pd[2]) {
+void connect(int pd[2], int fd) {
     close(fd);
     dup(pd[fd]);
     close(pd[0]);
     close(pd[1]);
 }
-
-// logging stuff /////////////////////////////////////////
-
-void get_filename(int pid, char* buf);
-char digit_to_char(int digit);
-
-void log(char* str) {
-    char filename[16];
-    int pid = getpid();
-    get_filename(pid, filename);
-    int fd = open(filename, O_WRONLY | O_CREATE);
-    fprintf(fd, str);
-    close(fd);
-}
-
-void get_filename(int pid, char* buf) {
-    int i = 0;
-    while (pid > 0) {
-        int digit = pid % 10;
-        buf[i++] = digit_to_char(digit);
-        pid = pid / 10;
-    }
-    buf[i++] = '.';
-    buf[i++] = 't';
-    buf[i++] = 'x';
-    buf[i++] = 't';
-    buf[i++] = '\0';
-}
-
-char digit_to_char(int digit) {
-    return '0' + digit;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
