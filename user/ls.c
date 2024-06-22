@@ -28,6 +28,8 @@ void ls(char *path) {
     struct dirent de;
     struct stat st;
 
+    // if `path` refers to a directory, `fd` will refer to that directory.
+    // we can then do `read(fd, ...)` to read one entry in the directory.
     if ((fd = open(path, O_RDONLY)) < 0) {
         fprintf(2, "ls: cannot open %s\n", path);
         return;
@@ -45,25 +47,39 @@ void ls(char *path) {
             printf("%s %d %d %l\n", fmtname(path), st.type, st.ino, st.size);
             break;
 
-        case T_DIR:
+        case T_DIR: {
             if (strlen(path) + 1 + DIRSIZ + 1 > sizeof buf) {
                 printf("ls: path too long\n");
                 break;
             }
+
             strcpy(buf, path);
             p = buf + strlen(buf);
             *p++ = '/';
+
+            // read one entry of directory into `de`
             while (read(fd, &de, sizeof(de)) == sizeof(de)) {
-                if (de.inum == 0) continue;
+                // `de.inum` is the inode number
+                // if `de.inum == 0`, the directory is unused
+                if (de.inum == 0) {
+                    continue;
+                }
+
+                // `DIRSIZ` is the maximum size of a directory name
                 memmove(p, de.name, DIRSIZ);
-                p[DIRSIZ] = 0;
+
+                p[DIRSIZ] = '\0';
+
                 if (stat(buf, &st) < 0) {
                     printf("ls: cannot stat %s\n", buf);
                     continue;
                 }
+
                 printf("%s %d %d %d\n", fmtname(buf), st.type, st.ino, st.size);
             }
+
             break;
+        }
     }
 
     close(fd);
@@ -79,11 +95,11 @@ char *fmtname(char *path) {
     }
     p++;
 
-    // Return blank-padded name.
     if (strlen(p) >= DIRSIZ) {
         return p;
     }
 
+    // Return blank-padded name.
     memmove(buf, p, strlen(p));
     memset(buf + strlen(p), ' ', DIRSIZ - strlen(p));
 
