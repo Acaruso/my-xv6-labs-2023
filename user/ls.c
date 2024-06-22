@@ -4,20 +4,22 @@
 #include "kernel/fs.h"
 #include "kernel/fcntl.h"
 
-char *fmtname(char *path) {
-    static char buf[DIRSIZ + 1];
-    char *p;
+void ls(char *path);
+char *fmtname(char *path);
 
-    // Find first character after last slash.
-    for (p = path + strlen(path); p >= path && *p != '/'; p--)
-        ;
-    p++;
+int main(int argc, char *argv[]) {
+    int i;
 
-    // Return blank-padded name.
-    if (strlen(p) >= DIRSIZ) return p;
-    memmove(buf, p, strlen(p));
-    memset(buf + strlen(p), ' ', DIRSIZ - strlen(p));
-    return buf;
+    if (argc < 2) {
+        ls(".");
+        exit(0);
+    }
+
+    for (i = 1; i < argc; i++) {
+        ls(argv[i]);
+    }
+
+    exit(0);
 }
 
 void ls(char *path) {
@@ -63,16 +65,27 @@ void ls(char *path) {
             }
             break;
     }
+
     close(fd);
 }
 
-int main(int argc, char *argv[]) {
-    int i;
+char *fmtname(char *path) {
+    static char buf[DIRSIZ + 1];
+    char *p;
 
-    if (argc < 2) {
-        ls(".");
-        exit(0);
+    // Find first character after last slash.
+    for (p = path + strlen(path); p >= path && *p != '/'; p--) {
+        // do nothing
     }
-    for (i = 1; i < argc; i++) ls(argv[i]);
-    exit(0);
+    p++;
+
+    // Return blank-padded name.
+    if (strlen(p) >= DIRSIZ) {
+        return p;
+    }
+
+    memmove(buf, p, strlen(p));
+    memset(buf + strlen(p), ' ', DIRSIZ - strlen(p));
+
+    return buf;
 }
