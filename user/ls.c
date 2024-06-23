@@ -53,6 +53,13 @@ void ls(char *path) {
                 break;
             }
 
+            // overwrite the null terminator with '/'
+            // `strlen` returns the length of the string not including the null terminator
+            // thus the index returned by `strlen` will point to the null terminator
+            // example:
+            //   char* s = 'abc'
+            //   strlen(s) == 3
+            //   s[3] == '\0'
             strcpy(buf, path);
             p = buf + strlen(buf);
             *p++ = '/';
@@ -67,7 +74,6 @@ void ls(char *path) {
 
                 // `DIRSIZ` is the maximum size of a directory name
                 memmove(p, de.name, DIRSIZ);
-
                 p[DIRSIZ] = '\0';
 
                 if (stat(buf, &st) < 0) {
@@ -85,11 +91,11 @@ void ls(char *path) {
     close(fd);
 }
 
-char *fmtname(char *path) {
+char* fmtname(char *path) {
     static char buf[DIRSIZ + 1];
-    char *p;
+    char* p;
 
-    // Find first character after last slash.
+    // find first character after last slash
     for (p = path + strlen(path); p >= path && *p != '/'; p--) {
         // do nothing
     }
@@ -99,7 +105,7 @@ char *fmtname(char *path) {
         return p;
     }
 
-    // Return blank-padded name.
+    // return blank-padded name
     memmove(buf, p, strlen(p));
     memset(buf + strlen(p), ' ', DIRSIZ - strlen(p));
 
