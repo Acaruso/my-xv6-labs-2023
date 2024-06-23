@@ -121,9 +121,9 @@ int main(int argc, char *argv[]) {
 int find(char* path_buf, char* file_to_find) {
     printf("find(%s, %s)\n", path_buf, file_to_find);
 
-    if (compare(path_buf, file_to_find) == 0) {
-        printf("found %s", path_buf);
-    }
+    // if (compare(path_buf, file_to_find) == 0) {
+    //     printf("found %s", path_buf);
+    // }
 
     int fd;
     struct dirent de;
@@ -166,6 +166,10 @@ int find(char* path_buf, char* file_to_find) {
         memmove(p, de.name, dir_name_len);
         p[dir_name_len] = '\0';
 
+        if (compare(path_buf, file_to_find) == 0) {
+            printf("found %s\n", path_buf);
+        }
+
         // if `path_buf` doesn't refer to a directory, don't
         // navigate into it
         if (is_directory(path_buf) == 0) {
@@ -190,6 +194,7 @@ int compare(char* path_buf, char* file_to_find) {
         // do nothing
     }
     p++;
+    printf("compare: %s %s\n", p, file_to_find);
     return strcmp(p, file_to_find);
 }
 
