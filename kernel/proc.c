@@ -114,7 +114,8 @@ found:
     p->state = USED;
 
     // Allocate a trapframe page.
-    if ((p->trapframe = (struct trapframe *)kalloc()) == 0) {
+    p->trapframe = (struct trapframe *)kalloc();
+    if (p->trapframe == 0) {
         freeproc(p);
         release(&p->lock);
         return 0;
@@ -264,17 +265,23 @@ int growproc(int n) {
 // Create a new process, copying the parent.
 // Sets up child kernel stack to return as if from fork() system call.
 int fork(void) {
-    int i, pid;
+    int i, pid, rc;
     struct proc *np;
     struct proc *p = myproc();
 
     // Allocate process.
-    if ((np = allocproc()) == 0) {
+    np = allocproc();
+    if (np == 0) {
         return -1;
     }
 
     // Copy user memory from parent to child.
-    if (uvmcopy(p->pagetable, np->pagetable, p->sz) < 0) {
+    rc = uvmcopy(
+        p->pagetable,       // source
+        np->pagetable,      // dest
+        p->sz               // size
+    );
+    if (rc < 0) {
         freeproc(np);
         release(&np->lock);
         return -1;
