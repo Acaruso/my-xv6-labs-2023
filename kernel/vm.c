@@ -384,6 +384,7 @@ int copyout(pagetable_t pagetable, uint64 dstva, char *src, uint64 len) {
         if (va0 >= MAXVA) {
             return -1;
         }
+
         pte = walk(pagetable, va0, 0);
         if (
             pte == 0
@@ -399,7 +400,12 @@ int copyout(pagetable_t pagetable, uint64 dstva, char *src, uint64 len) {
         if (n > len) {
             n = len;
         }
-        memmove((void *)(pa0 + (dstva - va0)), src, n);
+
+        memmove(
+            (void *)(pa0 + (dstva - va0)),  // dest
+            src,                            // src
+            n                               // n
+        );
 
         len -= n;
         src += n;
@@ -417,15 +423,22 @@ int copyin(pagetable_t pagetable, char *dst, uint64 srcva, uint64 len) {
 
     while (len > 0) {
         va0 = PGROUNDDOWN(srcva);
+
         pa0 = walkaddr(pagetable, va0);
         if (pa0 == 0) {
             return -1;
         }
+
         n = PGSIZE - (srcva - va0);
         if (n > len) {
             n = len;
         }
-        memmove(dst, (void *)(pa0 + (srcva - va0)), n);
+
+        memmove(
+            dst,                            // dest
+            (void *)(pa0 + (srcva - va0)),  // src
+            n                               // n
+        );
 
         len -= n;
         dst += n;

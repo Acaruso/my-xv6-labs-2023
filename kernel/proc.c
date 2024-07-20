@@ -647,3 +647,17 @@ void procdump(void) {
         printf("\n");
     }
 }
+
+int num_procs_in_use(void) {
+    int count = 0;
+
+    for (struct proc *p = proc; p < &proc[NPROC]; p++) {
+        acquire(&p->lock);
+        if (p->state != UNUSED) {
+            count++;
+        }
+        release(&p->lock);
+    }
+
+    return count;
+}

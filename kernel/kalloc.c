@@ -73,3 +73,13 @@ void *kalloc(void) {
 
     return (void *)r;
 }
+
+int get_free_mem_amount() {
+    int free_mem_amount = 0;
+    struct run *node = kmem.freelist;
+    while (node != 0) {
+        free_mem_amount += PGSIZE;
+        node = node->next;
+    }
+    return free_mem_amount;
+}
