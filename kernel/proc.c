@@ -195,7 +195,7 @@ pagetable_t proc_pagetable(struct proc *p) {
         USYSCALL,                   // va
         PGSIZE,                     // size
         (uint64)p->usyscall,        // pa
-        PTE_R | PTE_U                       // perm
+        PTE_R | PTE_U               // perm
     );
     if (rc != 0) {
         uvmunmap(pagetable, TRAPFRAME, 1, 0);
@@ -203,19 +203,6 @@ pagetable_t proc_pagetable(struct proc *p) {
         uvmfree(pagetable, 0);
         return 0;
     }
-
-    // map the usyscall page in kernel pagetable
-    // pagetable_t kernel_pagetable = get_kernel_pagetable();
-    // pte_t *pte = walk(kernel_pagetable, (uint64)p->usyscall, 0);
-    // if (!(*pte & PTE_V)) {
-    //     kvmmap(
-    //         kernel_pagetable,
-    //         (uint64)p->usyscall,
-    //         (uint64)p->usyscall,
-    //         PGSIZE,
-    //         PTE_R | PTE_W
-    //     );
-    // }
 
     return pagetable;
 }
