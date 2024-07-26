@@ -117,6 +117,15 @@ found:
         return 0;
     }
 
+    // allocate the usyscall physical page
+    p->usyscall = (struct usyscall *)kalloc();
+    if (p->usyscall == 0) {
+        freeproc(p);
+        release(&p->lock);
+        return 0;
+    }
+    p->usyscall->pid = p->pid;
+
     // An empty user page table.
     p->pagetable = proc_pagetable(p);
     if (p->pagetable == 0) {
@@ -140,6 +149,8 @@ found:
 static void freeproc(struct proc *p) {
     if (p->trapframe) kfree((void *)p->trapframe);
     p->trapframe = 0;
+    if (p->usyscall) kfree((void *)p->usyscall);
+    p->usyscall = 0;
     if (p->pagetable) proc_freepagetable(p->pagetable, p->sz);
     p->pagetable = 0;
     p->sz = 0;
@@ -178,6 +189,34 @@ pagetable_t proc_pagetable(struct proc *p) {
         return 0;
     }
 
+    // map the usyscall page in user pagetable
+    int rc = mappages(
+        pagetable,                  // pagetable
+        USYSCALL,                   // va
+        PGSIZE,                     // size
+        (uint64)p->usyscall,        // pa
+        PTE_R | PTE_U                       // perm
+    );
+    if (rc != 0) {
+        uvmunmap(pagetable, TRAPFRAME, 1, 0);
+        uvmunmap(pagetable, TRAMPOLINE, 1, 0);
+        uvmfree(pagetable, 0);
+        return 0;
+    }
+
+    // map the usyscall page in kernel pagetable
+    // pagetable_t kernel_pagetable = get_kernel_pagetable();
+    // pte_t *pte = walk(kernel_pagetable, (uint64)p->usyscall, 0);
+    // if (!(*pte & PTE_V)) {
+    //     kvmmap(
+    //         kernel_pagetable,
+    //         (uint64)p->usyscall,
+    //         (uint64)p->usyscall,
+    //         PGSIZE,
+    //         PTE_R | PTE_W
+    //     );
+    // }
+
     return pagetable;
 }
 
@@ -186,6 +225,12 @@ pagetable_t proc_pagetable(struct proc *p) {
 void proc_freepagetable(pagetable_t pagetable, uint64 sz) {
     uvmunmap(pagetable, TRAMPOLINE, 1, 0);
     uvmunmap(pagetable, TRAPFRAME, 1, 0);
+    uvmunmap(
+        pagetable,  // pagetable
+        USYSCALL,   // virtual address
+        1,          // num pages
+        0           // should free physical memory
+    );
     uvmfree(pagetable, sz);
 }
 
