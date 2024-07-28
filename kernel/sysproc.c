@@ -53,7 +53,36 @@ uint64 sys_sleep(void) {
 
 #ifdef LAB_PGTBL
 int sys_pgaccess(void) {
-    // lab pgtbl: your code here.
+    uint64 base;
+    argaddr(0, &base);
+    base = PGROUNDDOWN(base);
+
+    int len;
+    argint(1, &len);
+    if (len > 32) {
+        len = 32;
+    }
+
+    uint64 mask;
+    argaddr(2, &mask);
+
+    pagetable_t pagetable = myproc()->pagetable;
+
+    uint64 addr = base;
+    unsigned int k_mask = 0;
+
+    for (int i = 0; i < len; i++) {
+        pte_t *pte = walk(pagetable, addr, 0);
+        if ((*pte & (PTE_V | PTE_A)) == (PTE_V | PTE_A)) {
+            k_mask = k_mask | (1 << i);
+            // clear PTE_A
+            *pte = *pte & ~PTE_A;
+        }
+        addr += PGSIZE;
+    }
+
+    copyout(pagetable, mask, (char *)&k_mask, sizeof(int));
+
     return 0;
 }
 #endif
