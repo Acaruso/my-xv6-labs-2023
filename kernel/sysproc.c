@@ -73,6 +73,10 @@ int sys_pgaccess(void) {
 
     for (int i = 0; i < len; i++) {
         pte_t *pte = walk(pagetable, addr, 0);
+        if (pte == 0) {
+            return -1;
+        }
+
         if ((*pte & (PTE_V | PTE_A)) == (PTE_V | PTE_A)) {
             k_mask = k_mask | (1 << i);
             // clear PTE_A
