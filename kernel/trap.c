@@ -115,7 +115,7 @@ void usertrapret(void) {
         && p->sigalarm_in_progress == 0
     ) {
         p->sigalarm_in_progress = 1;
-        // save trapframe into trapframe_copy
+        // copy trapframe into trapframe_copy
         memmove(
             (void *)p->trapframe->trapframe_copy,   // dest
             (void *)p->trapframe,                   // src
