@@ -61,10 +61,14 @@ void usertrap(void) {
         setkilled(p);
     }
 
-    if (killed(p)) exit(-1);
+    if (killed(p)) {
+        exit(-1);
+    }
 
     // give up the CPU if this is a timer interrupt.
-    if (which_dev == 2) yield();
+    if (which_dev == 2) {
+        yield();
+    }
 
     usertrapret();
 }
@@ -131,7 +135,9 @@ void kerneltrap() {
     }
 
     // give up the CPU if this is a timer interrupt.
-    if (which_dev == 2 && myproc() != 0 && myproc()->state == RUNNING) yield();
+    if (which_dev == 2 && myproc() != 0 && myproc()->state == RUNNING) {
+        yield();
+    }
 
     // the yield() may have caused some traps to occur,
     // so restore trap registers for use by kernelvec.S's sepc instruction.
@@ -171,7 +177,9 @@ int devintr() {
         // the PLIC allows each device to raise at most one
         // interrupt at a time; tell the PLIC the device is
         // now allowed to interrupt again.
-        if (irq) plic_complete(irq);
+        if (irq) {
+            plic_complete(irq);
+        }
 
         return 1;
     } else if (scause == 0x8000000000000001L) {

@@ -60,6 +60,7 @@ int consolewrite(int user_src, uint64 src, int n) {
 
     for (i = 0; i < n; i++) {
         char c;
+        // copy one character from `src` to `c`
         if (either_copyin(&c, user_src, src + i, 1) == -1) break;
         uartputc(c);
     }
@@ -104,7 +105,9 @@ int consoleread(int user_dst, uint64 dst, int n) {
 
         // copy the input byte to the user-space buffer.
         cbuf = c;
-        if (either_copyout(user_dst, dst, &cbuf, 1) == -1) break;
+        if (either_copyout(user_dst, dst, &cbuf, 1) == -1) {
+            break;
+        }
 
         dst++;
         --n;
@@ -134,7 +137,10 @@ void consoleintr(int c) {
             procdump();
             break;
         case C('U'):  // Kill line.
-            while (cons.e != cons.w && cons.buf[(cons.e - 1) % INPUT_BUF_SIZE] != '\n') {
+            while (
+                cons.e != cons.w
+                && cons.buf[(cons.e - 1) % INPUT_BUF_SIZE] != '\n'
+            ) {
                 cons.e--;
                 consputc(BACKSPACE);
             }
@@ -156,7 +162,11 @@ void consoleintr(int c) {
                 // store for consumption by consoleread().
                 cons.buf[cons.e++ % INPUT_BUF_SIZE] = c;
 
-                if (c == '\n' || c == C('D') || cons.e - cons.r == INPUT_BUF_SIZE) {
+                if (
+                    c == '\n'
+                    || c == C('D')
+                    || cons.e - cons.r == INPUT_BUF_SIZE
+                ) {
                     // wake up consoleread() if a whole line (or end-of-file)
                     // has arrived.
                     cons.w = cons.e;

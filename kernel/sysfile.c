@@ -215,7 +215,9 @@ static struct inode *create(char *path, short type, short major, short minor) {
     if ((ip = dirlookup(dp, name, 0)) != 0) {
         iunlockput(dp);
         ilock(ip);
-        if (type == T_FILE && (ip->type == T_FILE || ip->type == T_DEVICE)) return ip;
+        if (type == T_FILE && (ip->type == T_FILE || ip->type == T_DEVICE)) {
+            return ip;
+        }
         iunlockput(ip);
         return 0;
     }
@@ -344,7 +346,10 @@ uint64 sys_mknod(void) {
     begin_op();
     argint(1, &major);
     argint(2, &minor);
-    if ((argstr(0, path, MAXPATH)) < 0 || (ip = create(path, T_DEVICE, major, minor)) == 0) {
+    if (
+        (argstr(0, path, MAXPATH)) < 0
+        || (ip = create(path, T_DEVICE, major, minor)) == 0
+    ) {
         end_op();
         return -1;
     }
