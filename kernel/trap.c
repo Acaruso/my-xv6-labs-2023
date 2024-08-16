@@ -65,8 +65,12 @@ void usertrap(void) {
         exit(-1);
     }
 
-    // give up the CPU if this is a timer interrupt.
+    // if the trap is a timer interrupt:
     if (which_dev == 2) {
+        if (p->sigalarm_interval != 0) {
+            p->sigalarm_ticks++;
+        }
+
         yield();
     }
 
@@ -105,7 +109,22 @@ void usertrapret(void) {
     w_sstatus(x);
 
     // set S Exception Program Counter to the saved user pc.
-    w_sepc(p->trapframe->epc);
+    if (
+        p->sigalarm_interval != 0
+        && p->sigalarm_ticks >= p->sigalarm_interval
+        && p->sigalarm_in_progress == 0
+    ) {
+        p->sigalarm_in_progress = 1;
+        // save trapframe into trapframe_copy
+        memmove(
+            (void *)p->trapframe->trapframe_copy,   // dest
+            (void *)p->trapframe,                   // src
+            288                                     // num bytes
+        );
+        w_sepc(p->sigalarm_handler);
+    } else {
+        w_sepc(p->trapframe->epc);
+    }
 
     // tell trampoline.S the user page table to switch to.
     uint64 satp = MAKE_SATP(p->pagetable);

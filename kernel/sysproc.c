@@ -69,3 +69,28 @@ uint64 sys_uptime(void) {
     release(&tickslock);
     return xticks;
 }
+
+uint64 sys_sigalarm(void) {
+    int sigalarm_interval;
+    uint64 sigalarm_handler;
+
+    argint(0, &sigalarm_interval);
+    argaddr(1, &sigalarm_handler);
+
+    myproc()->sigalarm_interval = sigalarm_interval;
+    myproc()->sigalarm_handler = sigalarm_handler;
+
+    return 0;
+}
+
+uint64 sys_sigreturn(void) {
+    struct proc *p = myproc();
+    memmove(
+        (void *)p->trapframe,                   // dest
+        (void *)p->trapframe->trapframe_copy,   // src
+        288                                     // num bytes
+    );
+    p->sigalarm_ticks = 0;
+    p->sigalarm_in_progress = 0;
+    return 0;
+}

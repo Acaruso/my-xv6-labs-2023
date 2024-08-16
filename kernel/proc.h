@@ -77,6 +77,8 @@ struct trapframe {
     /* 264 */ uint64 t4;
     /* 272 */ uint64 t5;
     /* 280 */ uint64 t6;
+
+    char trapframe_copy[288];   // bytes 288 to 576
 };
 
 enum procstate { UNUSED, USED, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
@@ -104,4 +106,9 @@ struct proc {
     struct file *ofile[NOFILE];   // Open files
     struct inode *cwd;            // Current directory
     char name[16];                // Process name (debugging)
+
+    int sigalarm_interval;        // interval to alarm at. if this is 0, alarms are disabled
+    int sigalarm_ticks;           // number of ticks since last alarm finished
+    int sigalarm_in_progress;     // is the alarm handler currently running?
+    uint64 sigalarm_handler;      // alarm handler function
 };
