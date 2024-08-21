@@ -16,10 +16,16 @@ void kernelvec();
 
 extern int devintr();
 
-void trapinit(void) { initlock(&tickslock, "time"); }
+void print_pte(pte_t* pte);
+
+void trapinit(void) {
+    initlock(&tickslock, "time");
+}
 
 // set up to take exceptions and traps while in the kernel.
-void trapinithart(void) { w_stvec((uint64)kernelvec); }
+void trapinithart(void) {
+    w_stvec((uint64)kernelvec);
+}
 
 //
 // handle an interrupt, exception, or system call from user space.
@@ -56,9 +62,39 @@ void usertrap(void) {
     } else if ((which_dev = devintr()) != 0) {
         // ok
     } else {
-        printf("usertrap(): unexpected scause %p pid=%d\n", r_scause(), p->pid);
-        printf("            sepc=%p stval=%p\n", r_sepc(), r_stval());
-        setkilled(p);
+        uint64 scause = r_scause();
+        int is_cow = 0;
+
+        if (scause == SCAUSE_PAGE_FAULT_STORE) {
+            // stval contains the virtual address that caused the fault
+            uint64 va = r_stval();
+
+            pte_t *pte = walk(p->pagetable, va, 0);
+            if (pte == 0) {
+                panic("usertrap: pte does not exist");
+            }
+
+            if (
+                (*pte & PTE_V)
+                && (*pte & PTE_COW)
+                && !(*pte & PTE_W)
+            ) {
+                is_cow = 1;
+                int rc = handle_cow_page(pte);
+                if (rc == 0) {
+                    // we're out of memory
+                    // "If a COW page fault occurs and there's no free memory, the process should be killed"
+                    // is this right?
+                    setkilled(p);
+                }
+            }
+        }
+
+        if (is_cow == 0) {
+            printf("usertrap(): unexpected scause %p pid=%d\n", scause, p->pid);
+            printf("            sepc=%p stval=%p\n", r_sepc(), r_stval());
+            setkilled(p);
+        }
     }
 
     if (killed(p)) exit(-1);
@@ -190,4 +226,17 @@ int devintr() {
     } else {
         return 0;
     }
+}
+
+void print_pte(pte_t* pte) {
+    printf(
+        "PTE: addr: %p, PTE_V: %d, PTE_R: %d, PTE_W: %d, PTE_X: %d, PTE_U: %d, PTE_COW: %d\n",
+        PTE2PA(*pte),
+        ((*pte & PTE_V) != 0),
+        ((*pte & PTE_R) != 0),
+        ((*pte & PTE_W) != 0),
+        ((*pte & PTE_X) != 0),
+        ((*pte & PTE_U) != 0),
+        ((*pte & PTE_COW) != 0)
+    );
 }

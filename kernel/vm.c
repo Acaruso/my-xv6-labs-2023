@@ -5,6 +5,8 @@
 #include "riscv.h"
 #include "defs.h"
 #include "fs.h"
+#include "spinlock.h"
+#include "proc.h"
 
 /*
  * the kernel's page table.
@@ -48,7 +50,9 @@ pagetable_t kvmmake(void) {
 }
 
 // Initialize the one kernel_pagetable
-void kvminit(void) { kernel_pagetable = kvmmake(); }
+void kvminit(void) {
+    kernel_pagetable = kvmmake();
+}
 
 // Switch h/w page table register to the kernel's page table,
 // and enable paging.
@@ -257,24 +261,80 @@ void uvmfree(pagetable_t pagetable, uint64 sz) {
 // physical memory.
 // returns 0 on success, -1 on failure.
 // frees any allocated pages on failure.
+// int uvmcopy(pagetable_t old, pagetable_t new, uint64 sz) {
+//     pte_t *pte;
+//     uint64 pa, i;
+//     uint flags;
+//     char *mem;
+
+//     for (i = 0; i < sz; i += PGSIZE) {
+//         // look up `pte` in parent's pagetable
+//         if ((pte = walk(old, i, 0)) == 0) {
+//             panic("uvmcopy: pte should exist");
+//         }
+//         if ((*pte & PTE_V) == 0) {
+//             panic("uvmcopy: page not present");
+//         }
+
+//         // allocate new page for child
+//         if ((mem = kalloc()) == 0) {
+//             goto err;
+//         }
+
+//         // copy data from parent page to child page
+//         pa = PTE2PA(*pte);
+//         memmove(
+//             mem,            // dest
+//             (char *)pa,     // source
+//             PGSIZE          // size
+//         );
+
+//         // map virtual address `i` to physical address `mem` in child's pagetable
+//         flags = PTE_FLAGS(*pte);
+//         if (mappages(new, i, PGSIZE, (uint64)mem, flags) != 0) {
+//             kfree(mem);
+//             goto err;
+//         }
+//     }
+//     return 0;
+
+// err:
+//     uvmunmap(new, 0, i / PGSIZE, 1);
+//     return -1;
+// }
+
 int uvmcopy(pagetable_t old, pagetable_t new, uint64 sz) {
     pte_t *pte;
     uint64 pa, i;
     uint flags;
-    char *mem;
 
     for (i = 0; i < sz; i += PGSIZE) {
-        if ((pte = walk(old, i, 0)) == 0) panic("uvmcopy: pte should exist");
-        if ((*pte & PTE_V) == 0) panic("uvmcopy: page not present");
+        // look up `pte` in parent's pagetable
+        if ((pte = walk(old, i, 0)) == 0) {
+            panic("uvmcopy: pte should exist");
+        }
+        if ((*pte & PTE_V) == 0) {
+            panic("uvmcopy: page not present");
+        }
+
+        // map virtual address `i` to physical address `pa` in child's pagetable
         pa = PTE2PA(*pte);
         flags = PTE_FLAGS(*pte);
-        if ((mem = kalloc()) == 0) goto err;
-        memmove(mem, (char *)pa, PGSIZE);
-        if (mappages(new, i, PGSIZE, (uint64)mem, flags) != 0) {
-            kfree(mem);
+        if (flags & PTE_W) {
+            flags = flags | PTE_COW;
+            flags = flags & ~PTE_W;
+
+            // update pte flags in parent's pagetable
+            *pte = *pte | PTE_COW;
+            *pte = *pte & ~PTE_W;
+        }
+        if (mappages(new, i, PGSIZE, (uint64)pa, flags) != 0) {
             goto err;
         }
+
+        increment_page_ref(pa);
     }
+
     return 0;
 
 err:
@@ -295,26 +355,94 @@ void uvmclear(pagetable_t pagetable, uint64 va) {
 // Copy from kernel to user.
 // Copy len bytes from src to virtual address dstva in a given page table.
 // Return 0 on success, -1 on error.
-int copyout(pagetable_t pagetable, uint64 dstva, char *src, uint64 len) {
-    uint64 n, va0, pa0;
-    pte_t *pte;
+int copyout(pagetable_t pagetable, uint64 va_dest, char *pa_src, uint64 len) {
+    uint64 va_dest_round_down;
+    uint64 pa_dest;
+    uint64 n;
+    pte_t *pte_dest;
 
     while (len > 0) {
-        va0 = PGROUNDDOWN(dstva);
-        if (va0 >= MAXVA) return -1;
-        pte = walk(pagetable, va0, 0);
-        if (pte == 0 || (*pte & PTE_V) == 0 || (*pte & PTE_U) == 0 || (*pte & PTE_W) == 0)
+        va_dest_round_down = PGROUNDDOWN(va_dest);
+        if (va_dest_round_down >= MAXVA) {
             return -1;
-        pa0 = PTE2PA(*pte);
-        n = PGSIZE - (dstva - va0);
-        if (n > len) n = len;
-        memmove((void *)(pa0 + (dstva - va0)), src, n);
+        }
+
+        pte_dest = walk(pagetable, va_dest_round_down, 0);
+
+        if (
+            (pte_dest == 0)
+            || !(*pte_dest & PTE_V)
+            || !(*pte_dest & PTE_U)
+            || (!(*pte_dest & PTE_W) && !(*pte_dest & PTE_COW))
+        ) {
+            return -1;
+        }
+
+        if (!(*pte_dest & PTE_W) && (*pte_dest & PTE_COW)) {
+            printf("copyout handle cow\n");
+            int rc = handle_cow_page(pte_dest);
+            if (rc == 0) {
+                // we're out of memory
+                // "If a COW page fault occurs and there's no free memory, the process should be killed"
+                // is this right?
+                setkilled(myproc());
+                return -1;
+            }
+        }
+
+        pa_dest = PTE2PA(*pte_dest);
+
+        n = PGSIZE - (va_dest - va_dest_round_down);
+        if (n > len) {
+            n = len;
+        }
+
+        memmove(
+            (void *)(pa_dest + (va_dest - va_dest_round_down)),     // dest
+            pa_src,                                                 // source
+            n                                                       // n
+        );
 
         len -= n;
-        src += n;
-        dstva = va0 + PGSIZE;
+        pa_src += n;
+        va_dest = va_dest_round_down + PGSIZE;
     }
+
     return 0;
+}
+
+// `pte` is the PTE for a page that we tried to write to and triggered a store page fault on.
+// assume that `pte` has PTE_COW set.
+int handle_cow_page(pte_t *pte) {
+    uint64 old_page = PTE2PA(*pte);
+
+    if (get_page_ref((uint64)old_page) > 1) {
+        // allocate new page
+        char *new_page = kalloc();
+        if (new_page == 0) {
+            return 0;
+        }
+
+        memmove(
+            new_page,           // dest
+            (char *)old_page,   // source
+            PGSIZE              // size
+        );
+
+        uint flags = PTE_FLAGS(*pte);
+        flags = flags & ~PTE_COW;
+        flags = flags | PTE_W;
+        *pte = PA2PTE(new_page) | flags;
+
+        decrement_page_ref((uint64)old_page);
+    } else {
+        // if page ref count == 1, don't need to copy the page,
+        // just need to update flags
+        *pte = *pte & ~PTE_COW;
+        *pte = *pte | PTE_W;
+    }
+
+    return 1;
 }
 
 // Copy from user to kernel.
