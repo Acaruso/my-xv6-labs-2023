@@ -122,9 +122,8 @@ void *kalloc(void) {
 
     if (r) {
         memset((char *)r, 5, PGSIZE);  // fill with junk
+        set_page_ref((uint64)r, 1);
     }
-
-    set_page_ref((uint64)r, 1);
 
     return (void *)r;
 }

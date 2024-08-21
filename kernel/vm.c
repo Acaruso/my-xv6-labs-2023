@@ -379,7 +379,6 @@ int copyout(pagetable_t pagetable, uint64 va_dest, char *pa_src, uint64 len) {
         }
 
         if (!(*pte_dest & PTE_W) && (*pte_dest & PTE_COW)) {
-            printf("copyout handle cow\n");
             int rc = handle_cow_page(pte_dest);
             if (rc == 0) {
                 // we're out of memory

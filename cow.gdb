@@ -22,4 +22,4 @@ target remote localhost:26000
 # b countfree
 
 file kernel/kernel
-b kernel_trap_page_fault
+# b kernel_trap_page_fault

@@ -2823,6 +2823,7 @@ int countfree() {
 
     if (pid == 0) {
         close(fds[0]);
+        int i = 0;
 
         while (1) {
             uint64 a = (uint64)sbrk(4096);
@@ -2832,6 +2833,16 @@ int countfree() {
 
             // modify the memory to make sure it's really allocated.
             *(char *)(a + 4096 - 1) = 1;
+
+            i++;
+
+            // if (i > 5) {
+            //     exit(1);
+            // }
+
+            // if (i > 32000) {
+            //     printf("addr: %p\n", a);
+            // }
 
             // report back one more page.
             if (write(fds[1], "x", 1) != 1) {
@@ -2850,14 +2861,16 @@ int countfree() {
         if (n % 1000 == 0) {
             printf("n: %d\n", n);
         }
-        if (n > 32000) {
-            printf("n: %d\n", n);
-        }
+
+        // if (n > 32000) {
+        //     printf("n: %d\n", n);
+        // }
+
         char c;
         int cc = read(fds[0], &c, 1);
-        if (n > 32000) {
-            printf("read\n");
-        }
+        // if (n > 32000) {
+        //     printf("read\n");
+        // }
 
         if (cc < 0) {
             printf("read() failed in countfree()\n");
