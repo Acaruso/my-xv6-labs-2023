@@ -69,23 +69,25 @@ void usertrap(void) {
             // stval contains the virtual address that caused the fault
             uint64 va = r_stval();
 
-            pte_t *pte = walk(p->pagetable, va, 0);
-            if (pte == 0) {
-                panic("usertrap: pte does not exist");
-            }
+            if (va < MAXVA) {
+                pte_t *pte = walk(p->pagetable, va, 0);
+                if (pte == 0) {
+                    panic("usertrap: pte does not exist");
+                }
 
-            if (
-                (*pte & PTE_V)
-                && (*pte & PTE_COW)
-                && !(*pte & PTE_W)
-            ) {
-                is_cow = 1;
-                int rc = handle_cow_page(pte);
-                if (rc == 0) {
-                    // we're out of memory
-                    // "If a COW page fault occurs and there's no free memory, the process should be killed"
-                    // is this right?
-                    setkilled(p);
+                if (
+                    (*pte & PTE_V)
+                    && (*pte & PTE_COW)
+                    && !(*pte & PTE_W)
+                ) {
+                    is_cow = 1;
+                    int rc = handle_cow_page(pte);
+                    if (rc == 0) {
+                        // we're out of memory
+                        // "If a COW page fault occurs and there's no free memory, the process should be killed"
+                        // is this right?
+                        setkilled(p);
+                    }
                 }
             }
         }

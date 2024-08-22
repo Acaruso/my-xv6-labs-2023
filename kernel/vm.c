@@ -332,7 +332,7 @@ int uvmcopy(pagetable_t old, pagetable_t new, uint64 sz) {
             goto err;
         }
 
-        increment_page_ref(pa);
+        increment_page_ref_synchronized(pa);
     }
 
     return 0;
@@ -408,40 +408,6 @@ int copyout(pagetable_t pagetable, uint64 va_dest, char *pa_src, uint64 len) {
     }
 
     return 0;
-}
-
-// `pte` is the PTE for a page that we tried to write to and triggered a store page fault on.
-// assume that `pte` has PTE_COW set.
-int handle_cow_page(pte_t *pte) {
-    uint64 old_page = PTE2PA(*pte);
-
-    if (get_page_ref((uint64)old_page) > 1) {
-        // allocate new page
-        char *new_page = kalloc();
-        if (new_page == 0) {
-            return 0;
-        }
-
-        memmove(
-            new_page,           // dest
-            (char *)old_page,   // source
-            PGSIZE              // size
-        );
-
-        uint flags = PTE_FLAGS(*pte);
-        flags = flags & ~PTE_COW;
-        flags = flags | PTE_W;
-        *pte = PA2PTE(new_page) | flags;
-
-        decrement_page_ref((uint64)old_page);
-    } else {
-        // if page ref count == 1, don't need to copy the page,
-        // just need to update flags
-        *pte = *pte & ~PTE_COW;
-        *pte = *pte | PTE_W;
-    }
-
-    return 1;
 }
 
 // Copy from user to kernel.

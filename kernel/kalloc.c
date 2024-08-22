@@ -42,7 +42,16 @@ void increment_page_ref(uint64 pa) {
     page_refs[PA2PAGENUM(pa)] += 1;
 }
 
+void increment_page_ref_synchronized(uint64 pa) {
+    acquire(&kmem.lock);
+    page_refs[PA2PAGENUM(pa)] += 1;
+    release(&kmem.lock);
+}
+
 void decrement_page_ref(uint64 pa) {
+    if (page_refs[PA2PAGENUM(pa)] == 0) {
+        return;
+    }
     page_refs[PA2PAGENUM(pa)] -= 1;
 }
 
@@ -71,10 +80,13 @@ void kfree(void *pa) {
         panic("kfree");
     }
 
+    acquire(&kmem.lock);
     decrement_page_ref((uint64)pa);
     if (get_page_ref((uint64)pa) > 0) {
+        release(&kmem.lock);
         return;
     }
+    release(&kmem.lock);
 
     // Fill with junk to catch dangling refs.
     memset(pa, 1, PGSIZE);
@@ -117,13 +129,67 @@ void *kalloc(void) {
     r = kmem.freelist;
     if (r) {
         kmem.freelist = r->next;
+        set_page_ref((uint64)r, 1);
     }
     release(&kmem.lock);
 
     if (r) {
         memset((char *)r, 5, PGSIZE);  // fill with junk
-        set_page_ref((uint64)r, 1);
     }
 
     return (void *)r;
+}
+
+void *kalloc_no_lock(void) {
+    struct run *r;
+
+    r = kmem.freelist;
+    if (r) {
+        kmem.freelist = r->next;
+        set_page_ref((uint64)r, 1);
+    }
+
+    if (r) {
+        memset((char *)r, 5, PGSIZE);  // fill with junk
+    }
+
+    return (void *)r;
+}
+
+// `pte` is the PTE for a page that we tried to write to and triggered a store page fault on.
+// assume that `pte` has PTE_COW set.
+int handle_cow_page(pte_t *pte) {
+    uint64 old_page = PTE2PA(*pte);
+
+    acquire(&kmem.lock);
+    if (get_page_ref((uint64)old_page) > 1) {
+        // allocate new page
+        char *new_page = kalloc_no_lock();
+        if (new_page == 0) {
+            release(&kmem.lock);
+            return 0;
+        }
+
+        memmove(
+            new_page,           // dest
+            (char *)old_page,   // source
+            PGSIZE              // size
+        );
+
+        uint flags = PTE_FLAGS(*pte);
+        flags = flags & ~PTE_COW;
+        flags = flags | PTE_W;
+        *pte = PA2PTE(new_page) | flags;
+
+        decrement_page_ref((uint64)old_page);
+    } else {
+        // if page ref count == 1, don't need to copy the page,
+        // just need to update flags
+        *pte = *pte & ~PTE_COW;
+        *pte = *pte | PTE_W;
+    }
+
+    release(&kmem.lock);
+
+    return 1;
 }

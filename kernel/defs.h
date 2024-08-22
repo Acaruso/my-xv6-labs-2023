@@ -66,7 +66,9 @@ void kinit(void);
 int get_page_ref(uint64 pa);
 void set_page_ref(uint64 pa, int new_value);
 void increment_page_ref(uint64 pa);
+void increment_page_ref_synchronized(uint64 pa);
 void decrement_page_ref(uint64 pa);
+int handle_cow_page(pte_t *pte);
 
 // log.c
 void initlog(int, struct superblock*);
@@ -177,7 +179,7 @@ uint64 walkaddr(pagetable_t, uint64);
 int copyout(pagetable_t, uint64, char*, uint64);
 int copyin(pagetable_t, char*, uint64, uint64);
 int copyinstr(pagetable_t, char*, uint64, uint64);
-int handle_cow_page(pte_t *pte);
+// int handle_cow_page(pte_t *pte);
 
 // plic.c
 void plicinit(void);
