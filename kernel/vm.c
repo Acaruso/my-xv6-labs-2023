@@ -255,80 +255,32 @@ void uvmfree(pagetable_t pagetable, uint64 sz) {
     freewalk(pagetable);
 }
 
-// Given a parent process's page table, copy
-// its memory into a child's page table.
-// Copies both the page table and the
-// physical memory.
-// returns 0 on success, -1 on failure.
-// frees any allocated pages on failure.
-// int uvmcopy(pagetable_t old, pagetable_t new, uint64 sz) {
-//     pte_t *pte;
-//     uint64 pa, i;
-//     uint flags;
-//     char *mem;
-
-//     for (i = 0; i < sz; i += PGSIZE) {
-//         // look up `pte` in parent's pagetable
-//         if ((pte = walk(old, i, 0)) == 0) {
-//             panic("uvmcopy: pte should exist");
-//         }
-//         if ((*pte & PTE_V) == 0) {
-//             panic("uvmcopy: page not present");
-//         }
-
-//         // allocate new page for child
-//         if ((mem = kalloc()) == 0) {
-//             goto err;
-//         }
-
-//         // copy data from parent page to child page
-//         pa = PTE2PA(*pte);
-//         memmove(
-//             mem,            // dest
-//             (char *)pa,     // source
-//             PGSIZE          // size
-//         );
-
-//         // map virtual address `i` to physical address `mem` in child's pagetable
-//         flags = PTE_FLAGS(*pte);
-//         if (mappages(new, i, PGSIZE, (uint64)mem, flags) != 0) {
-//             kfree(mem);
-//             goto err;
-//         }
-//     }
-//     return 0;
-
-// err:
-//     uvmunmap(new, 0, i / PGSIZE, 1);
-//     return -1;
-// }
-
-int uvmcopy(pagetable_t old, pagetable_t new, uint64 sz) {
-    pte_t *pte;
-    uint64 pa, i;
+int uvmcopy(pagetable_t pagetable_old, pagetable_t pagetable_new, uint64 sz) {
+    pte_t *pte_old;
+    uint64 pa, va;
     uint flags;
 
-    for (i = 0; i < sz; i += PGSIZE) {
+    for (va = 0; va < sz; va += PGSIZE) {
         // look up `pte` in parent's pagetable
-        if ((pte = walk(old, i, 0)) == 0) {
+        if ((pte_old = walk(pagetable_old, va, 0)) == 0) {
             panic("uvmcopy: pte should exist");
         }
-        if ((*pte & PTE_V) == 0) {
+        if ((*pte_old & PTE_V) == 0) {
             panic("uvmcopy: page not present");
         }
 
-        // map virtual address `i` to physical address `pa` in child's pagetable
-        pa = PTE2PA(*pte);
-        flags = PTE_FLAGS(*pte);
+        // map virtual address `va` to physical address `pa` in child's pagetable
+        pa = PTE2PA(*pte_old);
+        flags = PTE_FLAGS(*pte_old);
         if (flags & PTE_W) {
             flags = flags | PTE_COW;
             flags = flags & ~PTE_W;
 
             // update pte flags in parent's pagetable
-            *pte = *pte | PTE_COW;
-            *pte = *pte & ~PTE_W;
+            *pte_old = *pte_old | PTE_COW;
+            *pte_old = *pte_old & ~PTE_W;
         }
-        if (mappages(new, i, PGSIZE, (uint64)pa, flags) != 0) {
+        if (mappages(pagetable_new, va, PGSIZE, (uint64)pa, flags) != 0) {
             goto err;
         }
 
@@ -338,7 +290,7 @@ int uvmcopy(pagetable_t old, pagetable_t new, uint64 sz) {
     return 0;
 
 err:
-    uvmunmap(new, 0, i / PGSIZE, 1);
+    uvmunmap(pagetable_new, 0, va / PGSIZE, 1);
     return -1;
 }
 
