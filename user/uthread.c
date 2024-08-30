@@ -11,9 +11,10 @@
 #define MAX_THREAD 4
 
 struct thread {
-    char stack[STACK_SIZE]; /* the thread's stack */
-    int state;              /* FREE, RUNNING, RUNNABLE */
+    char stack[STACK_SIZE];     // the thread's stack
+    int state;                  // can be `FREE`, `RUNNING`, or `RUNNABLE`
 };
+
 struct thread all_thread[MAX_THREAD];
 struct thread *current_thread;
 extern void thread_switch(uint64, uint64);
@@ -27,17 +28,20 @@ void thread_init(void) {
 }
 
 void thread_schedule(void) {
-    struct thread *t, *next_thread;
+    struct thread *next_thread = 0;
+    struct thread *t = current_thread + 1;
 
-    /* Find another runnable thread. */
-    next_thread = 0;
-    t = current_thread + 1;
     for (int i = 0; i < MAX_THREAD; i++) {
-        if (t >= all_thread + MAX_THREAD) t = all_thread;
+        // wrap `t` around to 0
+        if (t >= all_thread + MAX_THREAD) {
+            t = all_thread;
+        }
+
         if (t->state == RUNNABLE) {
             next_thread = t;
             break;
         }
+
         t = t + 1;
     }
 
@@ -54,17 +58,22 @@ void thread_schedule(void) {
          * Invoke thread_switch to switch from t to next_thread:
          * thread_switch(??, ??);
          */
-    } else
+    } else {
         next_thread = 0;
+    }
 }
 
 void thread_create(void (*func)()) {
     struct thread *t;
 
     for (t = all_thread; t < all_thread + MAX_THREAD; t++) {
-        if (t->state == FREE) break;
+        if (t->state == FREE) {
+            break;
+        }
     }
+
     t->state = RUNNABLE;
+
     // YOUR CODE HERE
 }
 
@@ -80,7 +89,9 @@ void thread_a(void) {
     int i;
     printf("thread_a started\n");
     a_started = 1;
-    while (b_started == 0 || c_started == 0) thread_yield();
+    while (b_started == 0 || c_started == 0) {
+        thread_yield();
+    }
 
     for (i = 0; i < 100; i++) {
         printf("thread_a %d\n", i);
@@ -97,7 +108,9 @@ void thread_b(void) {
     int i;
     printf("thread_b started\n");
     b_started = 1;
-    while (a_started == 0 || c_started == 0) thread_yield();
+    while (a_started == 0 || c_started == 0) {
+        thread_yield();
+    }
 
     for (i = 0; i < 100; i++) {
         printf("thread_b %d\n", i);
@@ -114,7 +127,9 @@ void thread_c(void) {
     int i;
     printf("thread_c started\n");
     c_started = 1;
-    while (a_started == 0 || b_started == 0) thread_yield();
+    while (a_started == 0 || b_started == 0) {
+        thread_yield();
+    }
 
     for (i = 0; i < 100; i++) {
         printf("thread_c %d\n", i);
