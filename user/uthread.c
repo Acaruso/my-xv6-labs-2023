@@ -10,9 +10,31 @@
 #define STACK_SIZE 8192
 #define MAX_THREAD 4
 
+struct context {
+    uint64 ra;
+    uint64 sp;
+
+    // callee-saved
+    uint64 s0;
+    uint64 s1;
+    uint64 s2;
+    uint64 s3;
+    uint64 s4;
+    uint64 s5;
+    uint64 s6;
+    uint64 s7;
+    uint64 s8;
+    uint64 s9;
+    uint64 s10;
+    uint64 s11;
+};
+
 struct thread {
     char stack[STACK_SIZE];     // the thread's stack
     int state;                  // can be `FREE`, `RUNNING`, or `RUNNABLE`
+    void (*func)();             // the function for the thread to run
+    int has_run;                // has the thread run at least once yet?
+    struct context context;     // register context
 };
 
 struct thread all_thread[MAX_THREAD];
@@ -50,16 +72,18 @@ void thread_schedule(void) {
         exit(-1);
     }
 
-    if (current_thread != next_thread) { /* switch threads?  */
+    if (current_thread != next_thread) {        // switch threads
         next_thread->state = RUNNING;
         t = current_thread;
         current_thread = next_thread;
-        /* YOUR CODE HERE
-         * Invoke thread_switch to switch from t to next_thread:
-         * thread_switch(??, ??);
-         */
-    } else {
-        next_thread = 0;
+
+        if (next_thread->has_run == 0) {
+            next_thread->has_run = 1;
+            next_thread->context.ra = (uint64)next_thread->func;
+            next_thread->context.sp = (uint64)(next_thread->stack + STACK_SIZE);
+        }
+
+        thread_switch((uint64)&t->context, (uint64)&next_thread->context);
     }
 }
 
@@ -73,8 +97,10 @@ void thread_create(void (*func)()) {
     }
 
     t->state = RUNNABLE;
-
-    // YOUR CODE HERE
+    t->func = func;
+    t->has_run = 0;
+    memset(&t->stack, 0, STACK_SIZE);
+    memset(&t->context, 0, sizeof(struct context));
 }
 
 void thread_yield(void) {
