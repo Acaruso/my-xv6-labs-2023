@@ -7,15 +7,12 @@
 
 #define NBUCKET 5
 #define NKEYS 100000
-#define NLOCKS 4
 
 struct entry {
     int key;
     int value;
     struct entry *next;
 };
-
-pthread_mutex_t table_lock;
 
 struct entry *table[NBUCKET];
 pthread_mutex_t locks[NBUCKET];
