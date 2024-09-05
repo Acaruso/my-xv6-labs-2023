@@ -21,11 +21,19 @@ static void barrier_init(void) {
 }
 
 static void barrier() {
-    // YOUR CODE HERE
-    //
-    // Block until all threads have called barrier() and
-    // then increment bstate.round.
-    //
+    pthread_mutex_lock(&bstate.barrier_mutex);
+
+    bstate.nthread++;
+
+    if (bstate.nthread < nthread) {
+        pthread_cond_wait(&bstate.barrier_cond, &bstate.barrier_mutex);
+    } else {
+        bstate.round++;
+        bstate.nthread = 0;
+        pthread_cond_broadcast(&bstate.barrier_cond);
+    }
+
+    pthread_mutex_unlock(&bstate.barrier_mutex);
 }
 
 static void *thread(void *xa) {
@@ -44,7 +52,7 @@ static void *thread(void *xa) {
 }
 
 int main(int argc, char *argv[]) {
-    pthread_t *tha;
+    pthread_t *thread_arr;
     void *value;
     long i;
     double t1, t0;
@@ -53,17 +61,25 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "%s: %s nthread\n", argv[0], argv[0]);
         exit(-1);
     }
+
     nthread = atoi(argv[1]);
-    tha = malloc(sizeof(pthread_t) * nthread);
+
+    thread_arr = malloc(sizeof(pthread_t) * nthread);
+
     srandom(0);
 
     barrier_init();
+    int rc = 0;
 
     for (i = 0; i < nthread; i++) {
-        assert(pthread_create(&tha[i], NULL, thread, (void *)i) == 0);
+        rc = pthread_create(&thread_arr[i], NULL, thread, (void *)i);
+        assert(rc == 0);
     }
+
     for (i = 0; i < nthread; i++) {
-        assert(pthread_join(tha[i], &value) == 0);
+        rc = pthread_join(thread_arr[i], &value);
+        assert(rc == 0);
     }
+
     printf("OK; passed\n");
 }
