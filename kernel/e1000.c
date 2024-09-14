@@ -16,6 +16,10 @@ static struct mbuf *tx_mbufs[TX_RING_SIZE];
 static struct rx_desc rx_ring[RX_RING_SIZE] __attribute__((aligned(16)));
 static struct mbuf *rx_mbufs[RX_RING_SIZE];
 
+void print_mbuf(struct mbuf *m);
+void print_tx_desc(struct tx_desc* d);
+void print_rx_desc(struct rx_desc* d);
+
 // remember where the e1000's registers live.
 static volatile uint32 *regs;
 
@@ -64,6 +68,7 @@ void e1000_init(uint32 *xregs) {
     // filter by qemu's MAC address, 52:54:00:12:34:56
     regs[E1000_RA] = 0x12005452;
     regs[E1000_RA + 1] = 0x5634 | (1 << 31);
+
     // multicast table
     for (int i = 0; i < 4096 / 32; i++) regs[E1000_MTA + i] = 0;
 
@@ -87,24 +92,96 @@ void e1000_init(uint32 *xregs) {
 }
 
 int e1000_transmit(struct mbuf *m) {
-    //
-    // Your code here.
-    //
     // the mbuf contains an ethernet frame; program it into
     // the TX descriptor ring so that the e1000 sends it. Stash
     // a pointer so that it can be freed after sending.
-    //
+
+    // E1000_TDH - head
+    // E1000_TDT - tail
+
+    printf("\ne1000_transmit\n");
+
+    acquire(&e1000_lock);
+
+    uint32 tail = regs[E1000_TDT];
+    struct tx_desc *cur_desc = &tx_ring[tail];
+
+    // printf("tail: %d\n", tail);
+    // print_mbuf(m);
+    // print_tx_desc(cur_desc);
+
+    if ((cur_desc->status & E1000_TXD_STAT_DD) == 0) {
+        printf("(cur_desc->status & E1000_TXD_STAT_DD) == 0\n");
+        release(&e1000_lock);
+        return -1;
+    }
+
+    if (tx_mbufs[tail] != 0) {
+        mbuffree(tx_mbufs[tail]);
+    }
+
+    tx_mbufs[tail] = m;
+
+    cur_desc->addr = (uint64)m->head;
+    cur_desc->length = m->len;
+    // cur_desc->status = 0;
+    cur_desc->cmd = 0;
+    cur_desc->cmd |= 1 << 3;
+    cur_desc->cmd |= 1;
+
+    regs[E1000_TDT] = (tail + 1) % TX_RING_SIZE;
+
+    release(&e1000_lock);
+    printf("ne1000_transmit release\n");
 
     return 0;
 }
 
 static void e1000_recv(void) {
-    //
-    // Your code here.
-    //
     // Check for packets that have arrived from the e1000
     // Create and deliver an mbuf for each packet (using net_rx()).
-    //
+
+    // E1000_RDH - head
+    // E1000_RDT - tail
+
+    printf("\ne1000_recv\n");
+
+    acquire(&e1000_lock);
+
+    uint32 tail = regs[E1000_RDT];
+
+    tail = (tail + 1) % RX_RING_SIZE;
+
+    struct rx_desc *cur_desc = &rx_ring[tail];
+
+    // printf("tail: %d\n", tail);
+    // print_mbuf(rx_mbufs[tail]);
+    // print_rx_desc(cur_desc);
+
+    rx_mbufs[tail]->len = cur_desc->length;
+
+    release(&e1000_lock);
+    printf("e1000_recv release\n");
+
+    net_rx(rx_mbufs[tail]);
+    printf("e1000_recv net_rx\n");
+
+    acquire(&e1000_lock);
+    printf("e1000_recv acquire\n");
+
+    // printf("\ne1000_recv continued\n");
+
+    rx_mbufs[tail] = mbufalloc(0);
+    if (!rx_mbufs[tail]) {
+        panic("e1000");
+    }
+    cur_desc->addr = (uint64)rx_mbufs[tail]->head;
+
+    cur_desc->status = 0;
+    regs[E1000_RDT] = tail;
+
+    release(&e1000_lock);
+    printf("e1000_recv final release\n");
 }
 
 void e1000_intr(void) {
@@ -114,4 +191,39 @@ void e1000_intr(void) {
     regs[E1000_ICR] = 0xffffffff;
 
     e1000_recv();
+}
+
+void print_mbuf(struct mbuf *m) {
+    printf(
+        "mbuf: next: %p, head: %p, len: %d, buf: %p\n",
+        m->next,
+        m->head,
+        m->len,
+        m->buf
+    );
+}
+
+void print_tx_desc(struct tx_desc* d) {
+    printf(
+        "tx_desc: addr: %p, length: %d, cso: %d, cmd: %d, status: %d, css: %d, special: %d\n",
+        d->addr,
+        d->length,
+        d->cso,
+        d->cmd,
+        d->status,
+        d->css,
+        d->special
+    );
+}
+
+void print_rx_desc(struct rx_desc* d) {
+    printf(
+        "rx_desc: addr: %p, length: %d, csum: %d, status: %d, errors: %d, special: %d\n",
+        d->addr,
+        d->length,
+        d->csum,
+        d->status,
+        d->errors,
+        d->special
+    );
 }

@@ -1,0 +1,106 @@
+* networking notes
+
+- relevant files:
+  - e1000.c
+    - [[/ssh:ec2-ubuntu:/home/ubuntu/git/xv6-labs-2023/kernel/e1000.c::void e1000_intr(]]
+  - e1000_dev.h
+    - [[/ssh:ec2-ubuntu:/home/ubuntu/git/xv6-labs-2023/kernel/e1000_dev.h]] 
+  - net.c
+    - [[/ssh:ec2-ubuntu:/home/ubuntu/git/xv6-labs-2023/kernel/net.c]] 
+  - net.h
+    - [[/ssh:ec2-ubuntu:/home/ubuntu/git/xv6-labs-2023/kernel/net.h]]
+    - defines mbuf
+  - pci.c
+    - [[/ssh:ec2-ubuntu:/home/ubuntu/git/xv6-labs-2023/kernel/pci.c]] 
+
+- trap.c
+  - when we receive a dev interrupt, call e1000_intr
+    - [[/ssh:ec2-ubuntu:/home/ubuntu/git/xv6-labs-2023/kernel/trap.c::irq == E1000_IRQ]]
+- e1000.c
+  - call e1000_recv
+  - [[/ssh:ec2-ubuntu:/home/ubuntu/git/xv6-labs-2023/kernel/e1000.c::void e1000_intr(]]
+
+* kernel/e1000_dev.h
+
+#+begin_src cpp
+struct tx_desc {
+    uint64 addr;
+    uint16 length;
+    uint8 cso;
+    uint8 cmd;
+    uint8 status;
+    uint8 css;
+    uint16 special;
+};
+
+// [E1000 3.2.3]
+struct rx_desc {
+    uint64 addr;   /* Address of the descriptor's data buffer */
+    uint16 length; /* Length of data DMAed into data buffer */
+    uint16 csum;   /* Packet checksum */
+    uint8 status;  /* Descriptor status */
+    uint8 errors;  /* Descriptor Errors */
+    uint16 special;
+};
+#+END_SRC
+
+* net.h
+
+#+BEGIN_SRC cpp
+struct mbuf {
+    struct mbuf *next;    // the next mbuf in the chain
+    char *head;           // the current start position of the buffer
+    unsigned int len;     // the length of the buffer
+    char buf[MBUF_SIZE];  // the backing store
+};
+#+END_SRC
+
+* net.c
+
+#+BEGIN_SRC cpp
+struct mbuf *mbufalloc(unsigned int headroom) {
+    struct mbuf *m;
+
+    if (headroom > MBUF_SIZE) return 0;
+    m = kalloc();
+    if (m == 0) return 0;
+    m->next = 0;
+    m->head = (char *)m->buf + headroom;
+    m->len = 0;
+    memset(m->buf, 0, sizeof(m->buf));
+    return m;
+}
+#+END_SRC
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,1565 @@
+
+conf/lab.mk,16
+LAB=netLAB1,0
+
+.dir-locals.el,0
+
+gradelib.py,3463
+__all__ = []__all__7,205
+TESTS = []TESTS15,372
+TOTAL = POSSIBLE = 0TOTAL16,383
+PART_TOTAL = PART_POSSIBLE = 0PART_TOTAL17,404
+CURRENT_TEST = NoneCURRENT_TEST18,435
+GRADES = {}GRADES19,455
+def test(points, title=None, parent=None):test21,468
+    def register_test(fn, title=title):register_test27,726
+        def run_test():run_test34,946
+def end_part(name):end_part92,2821
+    def show_part():show_part93,2841
+def write_results():write_results102,3132
+def run_tests():run_tests112,3392
+def get_current_test():get_current_test145,4443
+def assert_equal(got, expect, msg=""):assert_equal156,4700
+def assert_lines_match(text, *regexps, **kw):assert_lines_match165,4993
+    def assert_lines_match_kw(no=[]):assert_lines_match_kw170,5217
+MAKE_TIMESTAMP = 0MAKE_TIMESTAMP221,6839
+def pre_make():pre_make223,6859
+def post_make():post_make228,7014
+def make(*target):make234,7202
+def show_command(cmd):show_command240,7314
+def maybe_unlink(*paths):maybe_unlink244,7410
+COLORS = {"default": "\033[0m", "red": "\033[31m", "green": "\033[32m"}COLORS252,7601
+def color(name, text):color254,7674
+def reset_fs():reset_fs259,7849
+def random_str(n=8):random_str263,7976
+def check_time():check_time267,8110
+def check_answers(file, n=10):check_answers277,8458
+class QEMU(object):QEMU294,8887
+    _GDBPORT = None_GDBPORT295,8907
+    def __init__(self, *make_args):__init__297,8928
+    def get_gdb_port():get_gdb_port323,9868
+    def fileno(self):fileno335,10323
+    def handle_read(self):handle_read339,10413
+    def write(self, buf):write349,10725
+    def wait(self):wait355,10890
+    def kill(self):kill360,10991
+class GDBClient(object):GDBClient364,11068
+    def __init__(self, port, timeout=15):__init__365,11093
+    def fileno(self):fileno378,11492
+    def handle_read(self):handle_read382,11575
+    def __send(self, cmd):__send404,12173
+    def __send_break(self):__send_break408,12313
+    def close(self):close411,12377
+    def cont(self):cont416,12480
+    def breakpoint(self, addr):breakpoint419,12526
+class TerminateTest(Exception):TerminateTest429,12727
+class Runner():Runner432,12769
+    def __init__(self, *default_monitors):__init__433,12785
+    def run_qemu(self, *monitors, **kw):run_qemu436,12880
+        def run_qemu_kw(target_base="qemu", make_args=[], timeout=30):run_qemu_kw445,13404
+    def __monitor_start(self, output):__monitor_start492,14900
+    def __react(self, reactors, timeout):__react502,15209
+    def user_test(self, binary, *monitors, **kw):user_test522,15851
+    def match(self, *args, **kwargs):match532,16349
+def save(path):save544,16710
+    def setup_save(runner):setup_save548,16848
+    def save_on_finish(fail):save_on_finish554,17022
+def stop_breakpoint(addr):stop_breakpoint567,17446
+    def setup_breakpoint(runner):setup_breakpoint571,17586
+def call_on_line(regexp, callback):call_on_line581,17967
+    def setup_call_on_line(runner):setup_call_on_line585,18101
+        def handle_output(output):handle_output587,18163
+def stop_on_line(regexp):stop_on_line597,18528
+    def stop(line):stop601,18641
+def shell_script(script, terminate_match=None):shell_script605,18728
+    def setup_call_on_line(runner):setup_call_on_line609,18877
+        class context:context610,18913
+            n = 0n611,18936
+            buf = bytearray()buf612,18954
+        def handle_output(output):handle_output613,18984
+
+ping.py,165
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)sock5,38
+addr = ('localhost', int(sys.argv[1]))addr6,94
+buf = "this is a ping!".encode('utf-8')buf7,133
+
+kernel/memlayout.h,948
+#define UART0 UART021,600
+#define UART0_IRQ UART0_IRQ22,626
+#define VIRTIO0 VIRTIO025,673
+#define VIRTIO0_IRQ VIRTIO0_IRQ26,700
+#define E1000_IRQ E1000_IRQ29,738
+#define CLINT CLINT33,828
+#define CLINT_MTIMECMP(CLINT_MTIMECMP34,853
+#define CLINT_MTIME CLINT_MTIME35,916
+#define PLIC PLIC38,1039
+#define PLIC_PRIORITY PLIC_PRIORITY39,1064
+#define PLIC_PENDING PLIC_PENDING40,1099
+#define PLIC_MENABLE(PLIC_MENABLE41,1136
+#define PLIC_SENABLE(PLIC_SENABLE42,1196
+#define PLIC_MPRIORITY(PLIC_MPRIORITY43,1256
+#define PLIC_SPRIORITY(PLIC_SPRIORITY44,1321
+#define PLIC_MCLAIM(PLIC_MCLAIM45,1386
+#define PLIC_SCLAIM(PLIC_SCLAIM46,1448
+#define KERNBASE KERNBASE51,1637
+#define PHYSTOP PHYSTOP52,1666
+#define TRAMPOLINE TRAMPOLINE56,1799
+#define KSTACK(KSTACK60,1924
+#define TRAPFRAME TRAPFRAME72,2261
+#define USYSCALL USYSCALL74,2318
+struct usyscall {usyscall76,2357
+    int pid;  // Process IDpid77,2375
+
+kernel/file.h,1767
+struct file {file1,0
+    enum { FD_NONE, FD_PIPE, FD_INODE, FD_DEVICE, FD_SOCK } type;__anonc1f1ee2b01033,29
+    enum { FD_NONE, FD_PIPE, FD_INODE, FD_DEVICE, FD_SOCK } type;FD_NONE3,29
+    enum { FD_NONE, FD_PIPE, FD_INODE, FD_DEVICE, FD_SOCK } type;FD_PIPE3,29
+    enum { FD_NONE, FD_PIPE, FD_INODE, FD_DEVICE, FD_SOCK } type;FD_INODE3,29
+    enum { FD_NONE, FD_PIPE, FD_INODE, FD_DEVICE, FD_SOCK } type;FD_DEVICE3,29
+    enum { FD_NONE, FD_PIPE, FD_INODE, FD_DEVICE, FD_SOCK } type;FD_SOCK3,29
+    enum { FD_NONE, FD_PIPE, FD_INODE, FD_DEVICE, FD_SOCK } type;type3,29
+    int ref;  // reference countref7,165
+    char readable;readable8,198
+    char writable;writable9,217
+    struct pipe *pipe;  // FD_PIPEpipe10,236
+    struct inode *ip;   // FD_INODE and FD_DEVICEip11,271
+    struct sock *sock;  // FD_SOCKsock13,336
+    uint off;     // FD_INODEoff15,378
+    short major;  // FD_DEVICEmajor16,408
+#define major(major19,443
+#define minor(minor20,485
+#define mkdev(mkdev21,521
+struct inode {inode24,598
+    uint dev;               // Device numberdev25,613
+    uint inum;              // Inode numberinum26,658
+    int ref;                // Reference countref27,702
+    struct sleeplock lock;  // protects everything below herelock28,749
+    int valid;              // inode has been read from disk?valid29,811
+    short type;  // copy of disk inodetype31,874
+    short major;major32,913
+    short minor;minor33,930
+    short nlink;nlink34,947
+    uint size;size35,964
+    uint addrs[NDIRECT + 1];addrs36,979
+struct devsw {devsw40,1060
+    int (*read)(int, uint64, int);read41,1075
+    int (*write)(int, uint64, int);write42,1110
+#define CONSOLE CONSOLE47,1180
+#define STATS STATS48,1198
+
+kernel/sleeplock.c,261
+void initsleeplock(struct sleeplock *lk, char *name) {initsleeplock12,181
+void acquiresleep(struct sleeplock *lk) {acquiresleep19,334
+void releasesleep(struct sleeplock *lk) {releasesleep29,531
+int holdingsleep(struct sleeplock *lk) {holdingsleep37,673
+
+kernel/main.c,72
+volatile static int started = 0;started7,99
+void main() {main10,187
+
+kernel/entry.S,67
+.global _entry_entry6,210
+_entry:_entry7,225
+spin:spin20,582
+
+kernel/spinlock.c,724
+#define NLOCK NLOCK12,188
+static struct spinlock *locks[NLOCK];locks14,207
+struct spinlock lock_locks;lock_locks15,245
+void freelock(struct spinlock *lk) {freelock17,274
+static void findslot(struct spinlock *lk) {findslot29,502
+void initlock(struct spinlock *lk, char *name) {initlock43,776
+void acquire(struct spinlock *lk) {acquire56,1025
+void release(struct spinlock *lk) {release87,1917
+int holding(struct spinlock *lk) {holding114,2866
+void push_off(void) {push_off124,3189
+void pop_off(void) {pop_off132,3332
+int atomic_read4(int *addr) {atomic_read4141,3595
+int snprint_lock(char *buf, int sz, struct spinlock *lk) {snprint_lock148,3725
+int statslock(char *buf, int sz) {statslock158,3968
+
+kernel/sysfile.c,877
+static int argfd(int n, int *pfd, struct file **pf) {argfd21,481
+static int fdalloc(struct file *f) {fdalloc34,830
+uint64 sys_dup(void) {sys_dup47,1069
+uint64 sys_read(void) {sys_read57,1241
+uint64 sys_write(void) {sys_write68,1423
+uint64 sys_close(void) {sys_close80,1608
+uint64 sys_fstat(void) {sys_fstat90,1772
+uint64 sys_link(void) {sys_link100,2016
+static int isdirempty(struct inode *dp) {isdirempty146,2865
+uint64 sys_unlink(void) {sys_unlink157,3168
+static struct inode *create(char *path, short type, short major, short minor) {create207,4160
+uint64 sys_open(void) {sys_open260,5354
+uint64 sys_mkdir(void) {sys_mkdir325,6684
+uint64 sys_mknod(void) {sys_mknod339,6947
+uint64 sys_chdir(void) {sys_chdir356,7291
+uint64 sys_exec(void) {sys_exec379,7714
+uint64 sys_pipe(void) {sys_pipe416,8554
+int sys_connect(void) {sys_connect443,9291
+
+kernel/uart.c,1218
+#define Reg(Reg16,320
+#define RHR RHR22,505
+#define THR THR23,566
+#define IER IER24,629
+#define IER_RX_ENABLE IER_RX_ENABLE25,673
+#define IER_TX_ENABLE IER_TX_ENABLE26,704
+#define FCR FCR27,735
+#define FCR_FIFO_ENABLE FCR_FIFO_ENABLE28,775
+#define FCR_FIFO_CLEAR FCR_FIFO_CLEAR29,808
+#define ISR ISR30,879
+#define LCR LCR31,941
+#define LCR_EIGHT_BITS LCR_EIGHT_BITS32,999
+#define LCR_BAUD_LATCH LCR_BAUD_LATCH33,1031
+#define LSR LSR34,1097
+#define LSR_RX_READY LSR_RX_READY35,1154
+#define LSR_TX_IDLE LSR_TX_IDLE36,1227
+#define ReadReg(ReadReg38,1305
+#define WriteReg(WriteReg39,1340
+struct spinlock uart_tx_lock;uart_tx_lock42,1417
+#define UART_TX_BUF_SIZE UART_TX_BUF_SIZE43,1447
+char uart_tx_buf[UART_TX_BUF_SIZE];uart_tx_buf44,1475
+uint64 uart_tx_w;  // write next to uart_tx_buf[uart_tx_w % UART_TX_BUF_SIZE]uart_tx_w45,1511
+uint64 uart_tx_r;  // read next from uart_tx_buf[uart_tx_r % UART_TX_BUF_SIZE]uart_tx_r46,1589
+void uartinit(void) {uartinit52,1737
+void uartputc(int c) {uartputc84,2585
+void uartputc_sync(int c) {uartputc_sync105,3180
+void uartstart() {uartstart123,3582
+int uartgetc(void) {uartgetc149,4269
+void uartintr(void) {uartintr161,4561
+
+kernel/syscall.c,447
+int fetchaddr(uint64 addr, uint64 *ip) {fetchaddr11,214
+int fetchstr(uint64 addr, char *buf, int max) {fetchstr21,632
+static uint64 argraw(int n) {argraw27,802
+void argint(int n, int *ip) { *ip = argraw(n); }argint48,1289
+void argaddr(int n, uint64 *ip) { *ip = argraw(n); }argaddr53,1446
+int argstr(int n, char *buf, int max) {argstr58,1672
+static uint64 (*syscalls[])(void) = {syscalls96,2707
+void syscall(void) {syscall112,3420
+
+kernel/net.h,4196
+#define MBUF_SIZE MBUF_SIZE5,35
+#define MBUF_DEFAULT_HEADROOM MBUF_DEFAULT_HEADROOM6,58
+struct mbuf {mbuf8,93
+    struct mbuf *next;    // the next mbuf in the chainnext9,107
+    char *head;           // the current start position of the bufferhead10,163
+    unsigned int len;     // the length of the bufferlen11,233
+    char buf[MBUF_SIZE];  // the backing storebuf12,287
+#define mbufpullhdr(mbufpullhdr28,944
+#define mbufpushhdr(mbufpushhdr29,1018
+#define mbufputhdr(mbufputhdr30,1092
+#define mbuftrimhdr(mbuftrimhdr31,1164
+struct mbufq {mbufq36,1318
+    struct mbuf *head;  // the first element in the queuehead37,1333
+    struct mbuf *tail;  // the last element in the queuetail38,1391
+static inline uint16 bswaps(uint16 val) {bswaps50,1649
+static inline uint32 bswapl(uint32 val) {bswapl54,1756
+#define ntohs ntohs63,2102
+#define ntohl ntohl64,2123
+#define htons htons65,2144
+#define htonl htonl66,2165
+#define ETHADDR_LEN ETHADDR_LEN72,2223
+struct eth {eth75,2298
+    uint8 dhost[ETHADDR_LEN];dhost76,2311
+    uint8 shost[ETHADDR_LEN];shost77,2341
+    uint16 type;type78,2371
+#define ETHTYPE_IP ETHTYPE_IP81,2416
+#define ETHTYPE_ARP ETHTYPE_ARP82,2465
+struct ip {ip85,2582
+    uint8 ip_vhl;   // version << 4 | header length >> 2ip_vhl86,2594
+    uint8 ip_tos;   // type of serviceip_tos87,2651
+    uint16 ip_len;  // total lengthip_len88,2690
+    uint16 ip_id;   // identificationip_id89,2726
+    uint16 ip_off;  // fragment offset fieldip_off90,2764
+    uint8 ip_ttl;   // time to liveip_ttl91,2809
+    uint8 ip_p;     // protocolip_p92,2845
+    uint16 ip_sum;  // checksumip_sum93,2877
+    uint32 ip_src, ip_dst;ip_src94,2909
+    uint32 ip_src, ip_dst;ip_dst94,2909
+#define IPPROTO_ICMP IPPROTO_ICMP97,2940
+#define IPPROTO_TCP IPPROTO_TCP98,2992
+#define IPPROTO_UDP IPPROTO_UDP99,3049
+#define MAKE_IP_ADDR(MAKE_IP_ADDR101,3100
+struct udp {udp105,3262
+    uint16 sport;  // source portsport106,3275
+    uint16 dport;  // destination portdport107,3309
+    uint16 ulen;   // length, including udp header, not including IP headerulen108,3348
+    uint16 sum;    // checksumsum109,3424
+struct arp {arp113,3510
+    uint16 hrd;  // format of hardware addresshrd114,3523
+    uint16 pro;  // format of protocol addresspro115,3570
+    uint8 hln;   // length of hardware addresshln116,3617
+    uint8 pln;   // length of protocol addresspln117,3664
+    uint16 op;   // operationop118,3711
+    char sha[ETHADDR_LEN];  // sender hardware addresssha120,3742
+    uint32 sip;             // sender IP addresssip121,3797
+    char tha[ETHADDR_LEN];  // target hardware addresstha122,3846
+    uint32 tip;             // target IP addresstip123,3901
+#define ARP_HRD_ETHER ARP_HRD_ETHER126,3978
+enum {__anon6b486f120103128,4016
+    ARP_OP_REQUEST = 1,  // requests hw addr given protocol addrARP_OP_REQUEST129,4023
+    ARP_OP_REPLY = 2,    // replies a hw addr given protocol addrARP_OP_REPLY130,4088
+struct dns {dns134,4204
+    uint16 id;  // request IDid135,4217
+    uint8 rd : 1;  // recursion desiredrd137,4248
+    uint8 tc : 1;  // truncatedtc138,4288
+    uint8 aa : 1;  // authoritiveaa139,4320
+    uint8 opcode : 4;opcode140,4354
+    uint8 qr : 1;     // query/responseqr141,4376
+    uint8 rcode : 4;  // response codercode142,4416
+    uint8 cd : 1;     // checking disabledcd143,4455
+    uint8 ad : 1;     // authenticated dataad144,4498
+    uint8 z : 1;z145,4542
+    uint8 ra : 1;  // recursion availablera146,4559
+    uint16 qdcount;  // number of question entriesqdcount148,4602
+    uint16 ancount;  // number of resource records in answer sectionancount149,4653
+    uint16 nscount;  // number of NS resource records in authority sectionnscount150,4722
+    uint16 arcount;  // number of resource records in additional recordsarcount151,4797
+struct dns_question {dns_question154,4898
+    uint16 qtype;qtype155,4920
+    uint16 qclass;qclass156,4938
+#define ARECORD ARECORD159,4985
+#define QCLASS QCLASS160,5010
+struct dns_data {dns_data162,5035
+    uint16 type;type163,5053
+    uint32 ttl;ttl165,5088
+    uint16 len;len166,5104
+
+kernel/string.c,524
+void *memset(void *dst, int c, uint n) {memset3,20
+int memcmp(const void *v1, const void *v2, uint n) {memcmp12,178
+void *memmove(void *dst, const void *src, uint n) {memmove25,392
+void *memcpy(void *dst, const void *src, uint n) { return memmove(dst, src, n); }memcpy44,746
+int strncmp(const char *p, const char *q, uint n) {strncmp46,829
+char *strncpy(char *s, const char *t, int n) {strncpy52,995
+char *safestrcpy(char *s, const char *t, int n) {safestrcpy62,1209
+int strlen(const char *s) {strlen72,1386
+
+kernel/fcntl.h,153
+#define O_RDONLY O_RDONLY1,0
+#define O_WRONLY O_WRONLY2,23
+#define O_RDWR O_RDWR3,46
+#define O_CREATE O_CREATE4,67
+#define O_TRUNC O_TRUNC5,90
+
+kernel/pci.c,34
+void pci_init() {pci_init14,227
+
+kernel/virtio.h,3242
+#define VIRTIO_MMIO_MAGIC_VALUE VIRTIO_MMIO_MAGIC_VALUE12,300
+#define VIRTIO_MMIO_VERSION VIRTIO_MMIO_VERSION13,353
+#define VIRTIO_MMIO_DEVICE_ID VIRTIO_MMIO_DEVICE_ID14,416
+#define VIRTIO_MMIO_VENDOR_ID VIRTIO_MMIO_VENDOR_ID15,491
+#define VIRTIO_MMIO_DEVICE_FEATURES VIRTIO_MMIO_DEVICE_FEATURES16,544
+#define VIRTIO_MMIO_DRIVER_FEATURES VIRTIO_MMIO_DRIVER_FEATURES17,586
+#define VIRTIO_MMIO_QUEUE_SEL VIRTIO_MMIO_QUEUE_SEL18,628
+#define VIRTIO_MMIO_QUEUE_NUM_MAX VIRTIO_MMIO_QUEUE_NUM_MAX19,700
+#define VIRTIO_MMIO_QUEUE_NUM VIRTIO_MMIO_QUEUE_NUM20,784
+#define VIRTIO_MMIO_QUEUE_READY VIRTIO_MMIO_QUEUE_READY21,865
+#define VIRTIO_MMIO_QUEUE_NOTIFY VIRTIO_MMIO_QUEUE_NOTIFY22,922
+#define VIRTIO_MMIO_INTERRUPT_STATUS VIRTIO_MMIO_INTERRUPT_STATUS23,980
+#define VIRTIO_MMIO_INTERRUPT_ACK VIRTIO_MMIO_INTERRUPT_ACK24,1037
+#define VIRTIO_MMIO_STATUS VIRTIO_MMIO_STATUS25,1095
+#define VIRTIO_MMIO_QUEUE_DESC_LOW VIRTIO_MMIO_QUEUE_DESC_LOW26,1153
+#define VIRTIO_MMIO_QUEUE_DESC_HIGH VIRTIO_MMIO_QUEUE_DESC_HIGH27,1250
+#define VIRTIO_MMIO_DRIVER_DESC_LOW VIRTIO_MMIO_DRIVER_DESC_LOW28,1292
+#define VIRTIO_MMIO_DRIVER_DESC_HIGH VIRTIO_MMIO_DRIVER_DESC_HIGH29,1386
+#define VIRTIO_MMIO_DEVICE_DESC_LOW VIRTIO_MMIO_DEVICE_DESC_LOW30,1429
+#define VIRTIO_MMIO_DEVICE_DESC_HIGH VIRTIO_MMIO_DEVICE_DESC_HIGH31,1518
+#define VIRTIO_CONFIG_S_ACKNOWLEDGE VIRTIO_CONFIG_S_ACKNOWLEDGE34,1613
+#define VIRTIO_CONFIG_S_DRIVER VIRTIO_CONFIG_S_DRIVER35,1651
+#define VIRTIO_CONFIG_S_DRIVER_OK VIRTIO_CONFIG_S_DRIVER_OK36,1684
+#define VIRTIO_CONFIG_S_FEATURES_OK VIRTIO_CONFIG_S_FEATURES_OK37,1720
+#define VIRTIO_BLK_F_RO VIRTIO_BLK_F_RO40,1782
+#define VIRTIO_BLK_F_SCSI VIRTIO_BLK_F_SCSI41,1841
+#define VIRTIO_BLK_F_CONFIG_WCE VIRTIO_BLK_F_CONFIG_WCE42,1913
+#define VIRTIO_BLK_F_MQ VIRTIO_BLK_F_MQ43,1989
+#define VIRTIO_F_ANY_LAYOUT VIRTIO_F_ANY_LAYOUT44,2055
+#define VIRTIO_RING_F_INDIRECT_DESC VIRTIO_RING_F_INDIRECT_DESC45,2086
+#define VIRTIO_RING_F_EVENT_IDX VIRTIO_RING_F_EVENT_IDX46,2125
+#define NUM NUM50,2221
+struct virtq_desc {virtq_desc53,2275
+    uint64 addr;addr54,2295
+    uint32 len;len55,2312
+    uint16 flags;flags56,2328
+    uint16 next;next57,2346
+#define VRING_DESC_F_NEXT VRING_DESC_F_NEXT59,2366
+#define VRING_DESC_F_WRITE VRING_DESC_F_WRITE60,2431
+struct virtq_avail {virtq_avail63,2532
+    uint16 flags;      // always zeroflags64,2553
+    uint16 idx;        // driver will write ring[idx] nextidx65,2591
+    uint16 ring[NUM];  // descriptor numbers of chain headsring66,2650
+    uint16 unused;unused67,2710
+struct virtq_used_elem {virtq_used_elem72,2834
+    uint32 id;  // index of start of completed descriptor chainid73,2859
+    uint32 len;len74,2923
+struct virtq_used {virtq_used77,2943
+    uint16 flags;  // always zeroflags78,2963
+    uint16 idx;    // device increments when it adds a ring[] entryidx79,2997
+    struct virtq_used_elem ring[NUM];ring80,3065
+#define VIRTIO_BLK_T_IN VIRTIO_BLK_T_IN86,3208
+#define VIRTIO_BLK_T_OUT VIRTIO_BLK_T_OUT87,3253
+struct virtio_blk_req {virtio_blk_req92,3447
+    uint32 type;  // VIRTIO_BLK_T_IN or ..._OUTtype93,3471
+    uint32 reserved;reserved94,3519
+    uint64 sector;sector95,3540
+
+kernel/virtio_disk.c,992
+#define R(r) ((volatile uint32 *)(VIRTR21,447
+static struct disk {disk23,498
+    struct virtq_desc *desc;desc29,796
+    struct virtq_avail *avail;avail35,1037
+    struct virtq_used *used;used40,1247
+    char free[NUM];   // is a descriptor free?free43,1306
+    uint16 used_idx;  // we've looked this far in used[2..NUM].used_idx44,1353
+    struct {__anon0ecc7a2d010849,1565
+        struct buf *b;b50,1578
+        char status;status51,1601
+    } info[NUM];info52,1622
+    struct virtio_blk_req ops[NUM];ops56,1723
+    struct spinlock vdisk_lock;vdisk_lock58,1760
+} disk;disk60,1793
+void virtio_disk_init(void) {virtio_disk_init62,1802
+static int alloc_desc() {alloc_desc147,4723
+static void free_desc(int i) {free_desc158,4929
+static void free_chain(int i) {free_chain170,5236
+static int alloc3_desc(int *idx) {alloc3_desc184,5591
+void virtio_disk_rw(struct buf *b, int write) {virtio_disk_rw195,5832
+void virtio_disk_intr() {virtio_disk_intr272,8122
+
+kernel/kalloc.c,357
+struct run {run17,406
+    struct run *next;next18,419
+struct {__anon3c3fa87c010821,445
+    struct spinlock lock;lock22,454
+    struct run *freelist;freelist23,480
+} kmem;kmem24,506
+void kinit() {kinit26,515
+void freerange(void *pa_start, void *pa_end) {freerange31,604
+void kfree(void *pa) {kfree41,973
+void *kalloc(void) {kalloc60,1465
+
+kernel/plic.c,177
+void plicinit(void) {plicinit11,163
+void plicinithart(void) {plicinithart24,481
+int plic_claim(void) {plic_claim41,957
+void plic_complete(int irq) {plic_complete48,1106
+
+kernel/riscv.h,4283
+static inline uint64 r_mhartid() {r_mhartid4,53
+#define MSTATUS_MPP_MASK MSTATUS_MPP_MASK12,204
+#define MSTATUS_MPP_M MSTATUS_MPP_M13,259
+#define MSTATUS_MPP_S MSTATUS_MPP_S14,292
+#define MSTATUS_MPP_U MSTATUS_MPP_U15,325
+#define MSTATUS_MIE MSTATUS_MIE16,358
+static inline uint64 r_mstatus() {r_mstatus18,424
+static inline void w_mstatus(uint64 x) { asm volatile("csrw mstatus, %0" : : "r"(x)); }w_mstatus24,538
+static inline void w_mepc(uint64 x) { asm volatile("csrw mepc, %0" : : "r"(x)); }w_mepc29,743
+#define SSTATUS_SPP SSTATUS_SPP33,866
+#define SSTATUS_SPIE SSTATUS_SPIE34,937
+#define SSTATUS_UPIE SSTATUS_UPIE35,1009
+#define SSTATUS_SIE SSTATUS_SIE36,1075
+#define SSTATUS_UIE SSTATUS_UIE37,1138
+static inline uint64 r_sstatus() {r_sstatus39,1196
+static inline void w_sstatus(uint64 x) { asm volatile("csrw sstatus, %0" : : "r"(x)); }w_sstatus45,1310
+static inline uint64 r_sip() {r_sip48,1431
+static inline void w_sip(uint64 x) { asm volatile("csrw sip, %0" : : "r"(x)); }w_sip54,1537
+#define SIE_SEIE SIE_SEIE57,1649
+#define SIE_STIE SIE_STIE58,1689
+#define SIE_SSIE SIE_SSIE59,1726
+static inline uint64 r_sie() {r_sie60,1766
+static inline void w_sie(uint64 x) { asm volatile("csrw sie, %0" : : "r"(x)); }w_sie66,1872
+#define MIE_MEIE MIE_MEIE69,1986
+#define MIE_MTIE MIE_MTIE70,2027
+#define MIE_MSIE MIE_MSIE71,2065
+static inline uint64 r_mie() {r_mie72,2106
+static inline void w_mie(uint64 x) { asm volatile("csrw mie, %0" : : "r"(x)); }w_mie78,2212
+static inline void w_sepc(uint64 x) { asm volatile("csrw sepc, %0" : : "r"(x)); }w_sepc83,2412
+static inline uint64 r_sepc() {r_sepc85,2495
+static inline uint64 r_medeleg() {r_medeleg92,2635
+static inline void w_medeleg(uint64 x) { asm volatile("csrw medeleg, %0" : : "r"(x)); }w_medeleg98,2749
+static inline uint64 r_mideleg() {r_mideleg101,2870
+static inline void w_mideleg(uint64 x) { asm volatile("csrw mideleg, %0" : : "r"(x)); }w_mideleg107,2984
+static inline void w_stvec(uint64 x) { asm volatile("csrw stvec, %0" : : "r"(x)); }w_stvec111,3138
+static inline uint64 r_stvec() {r_stvec113,3223
+static inline void w_mtvec(uint64 x) { asm volatile("csrw mtvec, %0" : : "r"(x)); }w_mtvec120,3366
+static inline void w_pmpcfg0(uint64 x) { asm volatile("csrw pmpcfg0, %0" : : "r"(x)); }w_pmpcfg0123,3481
+static inline void w_pmpaddr0(uint64 x) { asm volatile("csrw pmpaddr0, %0" : : "r"(x)); }w_pmpaddr0125,3570
+#define SATP_SV39 SATP_SV39128,3700
+#define MAKE_SATP(MAKE_SATP130,3730
+static inline void w_satp(uint64 x) { asm volatile("csrw satp, %0" : : "r"(x)); }w_satp134,3892
+static inline uint64 r_satp() {r_satp136,3975
+static inline void w_mscratch(uint64 x) { asm volatile("csrw mscratch, %0" : : "r"(x)); }w_mscratch142,4083
+static inline uint64 r_scause() {r_scause145,4199
+static inline uint64 r_stval() {r_stval152,4336
+static inline void w_mcounteren(uint64 x) { asm volatile("csrw mcounteren, %0" : : "r"(x)); }w_mcounteren159,4477
+static inline uint64 r_mcounteren() {r_mcounteren161,4572
+static inline uint64 r_time() {r_time168,4722
+static inline void intr_on() { w_sstatus(r_sstatus() | SSTATUS_SIE); }intr_on175,4858
+static inline void intr_off() { w_sstatus(r_sstatus() & ~SSTATUS_SIE); }intr_off178,4959
+static inline int intr_get() {intr_get181,5067
+static inline uint64 r_sp() {r_sp186,5164
+static inline uint64 r_tp() {r_tp194,5391
+static inline void w_tp(uint64 x) { asm volatile("mv tp, %0" : : "r"(x)); }w_tp200,5493
+static inline uint64 r_ra() {r_ra202,5570
+static inline void sfence_vma() {sfence_vma209,5690
+typedef uint64 pte_t;pte_t214,5821
+typedef uint64 *pagetable_t;  // 512 PTEspagetable_t215,5843
+#define PGSIZE PGSIZE219,5912
+#define PGSHIFT PGSHIFT220,5951
+#define PGROUNDUP(PGROUNDUP222,6005
+#define PGROUNDDOWN(PGROUNDDOWN223,6065
+#define PTE_V PTE_V225,6113
+#define PTE_R PTE_R226,6147
+#define PTE_W PTE_W227,6171
+#define PTE_X PTE_X228,6195
+#define PTE_U PTE_U229,6219
+#define PA2PTE(PA2PTE232,6322
+#define PTE2PA(PTE2PA234,6371
+#define PTE_FLAGS(PTE_FLAGS236,6414
+#define PXMASK PXMASK239,6524
+#define PXSHIFT(PXSHIFT240,6556
+#define PX(level, va) ((((uint64)(va)) >> PXSHIFT(level)) & PXMPX241,6605
+#define MAXVA MAXVA247,6873
+
+kernel/exec.c,206
+int flags2perm(int flags) {flags2perm12,222
+int exec(char *path, char **argv) {exec19,359
+static int loadseg(pagetable_t pagetable, uint64 va, struct inode *ip, uint offset, uint sz) {loadseg125,3678
+
+kernel/sysnet.c,980
+struct sock {sock17,245
+    struct sock *next;     // the next socket in the listnext18,259
+    uint32 raddr;          // the remote IPv4 addressraddr19,317
+    uint16 lport;          // the local UDP port numberlport20,371
+    uint16 rport;          // the remote UDP port numberrport21,427
+    struct spinlock lock;  // protects the rxqlock22,484
+    struct mbufq rxq;      // a queue of packets waiting to be receivedrxq23,531
+static struct spinlock lock;lock26,607
+static struct sock *sockets;sockets27,636
+void sockinit(void) { initlock(&lock, "socktbl"); }sockinit29,666
+int sockalloc(struct file **f, uint32 raddr, uint16 lport, uint16 rport) {sockalloc31,719
+void sockclose(struct sock *si) {sockclose71,1612
+int sockread(struct sock *si, uint64 addr, int n) {sockread96,2082
+int sockwrite(struct sock *si, uint64 addr, int n) {sockwrite122,2636
+void sockrecvudp(struct mbuf *m, uint32 raddr, uint16 lport, uint16 rport) {sockrecvudp138,3045
+
+kernel/kernelvec.S,157
+.globl kerneltrapkerneltrap9,272
+.globl kernelveckernelvec10,290
+kernelvec:kernelvec12,316
+.globl timervectimervec93,2117
+timervec:timervec95,2142
+
+kernel/e1000.c,676
+#define TX_RING_SIZE TX_RING_SIZE11,179
+static struct tx_desc tx_ring[TX_RING_SIZE] __attribute__((aligned(16)));tx_ring12,203
+static struct mbuf *tx_mbufs[TX_RING_SIZE];tx_mbufs13,277
+#define RX_RING_SIZE RX_RING_SIZE15,322
+static struct rx_desc rx_ring[RX_RING_SIZE] __attribute__((aligned(16)));rx_ring16,346
+static struct mbuf *rx_mbufs[RX_RING_SIZE];rx_mbufs17,420
+static volatile uint32 *regs;regs20,511
+struct spinlock e1000_lock;e1000_lock22,542
+void e1000_init(uint32 *xregs) {e1000_init27,673
+int e1000_transmit(struct mbuf *m) {e1000_transmit89,2971
+static void e1000_recv(void) {e1000_recv101,3250
+void e1000_intr(void) {e1000_intr110,3454
+
+kernel/spinlock.h,194
+struct spinlock {spinlock2,26
+    uint locked;  // Is the lock held?locked3,44
+    char *name;       // Name of lock.name6,106
+    struct cpu *cpu;  // The cpu holding the lock.cpu7,145
+
+kernel/trap.c,408
+struct spinlock tickslock;tickslock9,139
+uint ticks;ticks10,166
+void trapinit(void) { initlock(&tickslock, "time"); }trapinit19,309
+void trapinithart(void) { w_stvec((uint64)kernelvec); }trapinithart22,424
+void usertrap(void) {usertrap28,582
+void usertrapret(void) {usertrapret75,1756
+void kerneltrap() {kerneltrap118,3478
+void clockintr() {clockintr142,4253
+int devintr() {devintr154,4517
+
+kernel/param.h,378
+#define NPROC NPROC1,0
+#define NCPU NCPU2,66
+#define NOFILE NOFILE3,127
+#define NFILE NFILE4,188
+#define NINODE NINODE5,248
+#define NDEV NDEV6,319
+#define ROOTDEV ROOTDEV7,385
+#define MAXARG MAXARG8,462
+#define MAXOPBLOCKS MAXOPBLOCKS9,519
+#define LOGSIZE LOGSIZE10,590
+#define NBUF NBUF11,659
+#define FSSIZE FSSIZE12,722
+#define MAXPATH MAXPATH13,790
+
+kernel/net.c,1673
+static uint32 local_ip = MAKE_IP_ADDR(10, 0, 2, 15);  // qemu's idea of the guest IPlocal_ip14,216
+static uint8 local_mac[ETHADDR_LEN] = {0x52, 0x54, 0x00, 0x12, 0x34, 0x56};local_mac15,301
+static uint8 broadcast_mac[ETHADDR_LEN] = {0xFF, 0XFF, 0XFF, 0XFF, 0XFF, 0XFF};broadcast_mac16,377
+char *mbufpull(struct mbuf *m, unsigned int len) {mbufpull20,597
+char *mbufpush(struct mbuf *m, unsigned int len) {mbufpush29,840
+char *mbufput(struct mbuf *m, unsigned int len) {mbufput37,1068
+char *mbuftrim(struct mbuf *m, unsigned int len) {mbuftrim46,1373
+struct mbuf *mbufalloc(unsigned int headroom) {mbufalloc53,1537
+void mbuffree(struct mbuf *m) { kfree(m); }mbuffree67,1846
+void mbufq_pushtail(struct mbufq *q, struct mbuf *m) {mbufq_pushtail70,1934
+struct mbuf *mbufq_pophead(struct mbufq *q) {mbufq_pophead81,2167
+int mbufq_empty(struct mbufq *q) { return q->head == 0; }mbufq_empty89,2365
+void mbufq_init(struct mbufq *q) { q->head = 0; }mbufq_init92,2456
+static unsigned short in_cksum(const unsigned char *addr, int len) {in_cksum96,2621
+static void net_tx_eth(struct mbuf *m, uint16 ethtype) {net_tx_eth128,3573
+static void net_tx_ip(struct mbuf *m, uint8 proto, uint32 dip) {net_tx_ip144,4106
+void net_tx_udp(struct mbuf *m, uint32 dip, uint16 sport, uint16 dport) {net_tx_udp163,4653
+static int net_tx_arp(uint16 op, uint8 dmac[ETHADDR_LEN], uint32 dip) {net_tx_arp178,5071
+static void net_rx_arp(struct mbuf *m) {net_rx_arp205,5812
+static void net_rx_udp(struct mbuf *m, uint16 len, struct ip *iphdr) {net_rx_udp234,6695
+static void net_rx_ip(struct mbuf *m) {net_rx_ip263,7416
+void net_rx(struct mbuf *m) {net_rx291,8223
+
+kernel/vm.c,1495
+pagetable_t kernel_pagetable;kernel_pagetable14,207
+pagetable_t kvmmake(void) {kvmmake21,399
+void kvminit(void) { kernel_pagetable = kvmmake(); }kvminit61,1637
+void kvminithart() {kvminithart65,1775
+pte_t *walk(pagetable_t pagetable, uint64 va, int alloc) {walk87,2519
+uint64 walkaddr(pagetable_t pagetable, uint64 va) {walkaddr106,3145
+void kvmmap(pagetable_t kpgtbl, uint64 va, uint64 pa, uint64 sz, int perm) {kvmmap123,3552
+int mappages(pagetable_t pagetable, uint64 va, uint64 size, uint64 pa, int perm) {mappages131,3926
+void uvmunmap(pagetable_t pagetable, uint64 va, uint64 npages, int do_free) {uvmunmap153,4559
+pagetable_t uvmcreate() {uvmcreate176,5260
+void uvmfirst(pagetable_t pagetable, uchar *src, uint sz) {uvmfirst187,5563
+uint64 uvmalloc(pagetable_t pagetable, uint64 oldsz, uint64 newsz, int xperm) {uvmalloc199,5998
+uint64 uvmdealloc(pagetable_t pagetable, uint64 oldsz, uint64 newsz) {uvmdealloc226,6843
+void freewalk(pagetable_t pagetable) {freewalk239,7246
+void uvmfree(pagetable_t pagetable, uint64 sz) {uvmfree257,7823
+int uvmcopy(pagetable_t old, pagetable_t new, uint64 sz) {uvmcopy268,8192
+void uvmclear(pagetable_t pagetable, uint64 va) {uvmclear295,8938
+int copyout(pagetable_t pagetable, uint64 dstva, char *src, uint64 len) {copyout306,9240
+int copyin(pagetable_t pagetable, char *dst, uint64 srcva, uint64 len) {copyin337,10137
+int copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max) {copyinstr359,10763
+
+kernel/swtch.S,44
+.globl swtchswtch8,131
+swtch:swtch9,144
+
+kernel/kernel.ld,210
+  .text : {.text12,166
+    _trampoline = .;_trampoline15,222
+    PROVIDE(etext = .);etext19,363
+  .rodata : {.rodata22,392
+  .data : {.data29,552
+  .bss : {.bss36,700
+  PROVIDE(end = .);end43,842
+
+kernel/bio.c,497
+struct {__anon6a716540010825,774
+    struct spinlock lock;lock26,783
+    struct buf buf[NBUF];buf27,809
+    struct buf head;head32,994
+} bcache;bcache33,1015
+void binit(void) {binit35,1026
+static struct buf *bget(uint dev, uint blockno) {bget55,1587
+struct buf *bread(uint dev, uint blockno) {bread87,2470
+void bwrite(struct buf *b) {bwrite99,2706
+void brelse(struct buf *b) {brelse106,2894
+void bpin(struct buf *b) {bpin126,3347
+void bunpin(struct buf *b) {bunpin132,3448
+
+kernel/file.c,604
+struct devsw devsw[NDEV];devsw16,267
+struct {__anonc1f1ee26010817,293
+    struct spinlock lock;lock18,302
+    struct file file[NFILE];file19,328
+} ftable;ftable20,357
+void fileinit(void) { initlock(&ftable.lock, "ftable"); }fileinit22,368
+struct file *filealloc(void) {filealloc25,457
+struct file *filedup(struct file *f) {filedup41,797
+void fileclose(struct file *f) {fileclose50,1022
+int filestat(struct file *f, uint64 addr) {filestat80,1684
+int fileread(struct file *f, uint64 addr, int n) {fileread96,2087
+int filewrite(struct file *f, uint64 addr, int n) {filewrite125,2808
+
+kernel/fs.h,1475
+#define ROOTINO ROOTINO4,91
+#define BSIZE BSIZE5,128
+struct superblock {superblock13,421
+    uint magic;       // Must be FSMAGICmagic14,441
+    uint size;        // Size of file system image (blocks)size15,482
+    uint nblocks;     // Number of data blocksnblocks16,542
+    uint ninodes;     // Number of inodes.ninodes17,589
+    uint nlog;        // Number of log blocksnlog18,632
+    uint logstart;    // Block number of first log blocklogstart19,678
+    uint inodestart;  // Block number of first inode blockinodestart20,735
+    uint bmapstart;   // Block number of first free map blockbmapstart21,794
+#define FSMAGIC FSMAGIC24,860
+#define NDIRECT NDIRECT26,888
+#define NINDIRECT NINDIRECT27,907
+#define MAXFILE MAXFILE28,948
+struct dinode {dinode31,1014
+    short type;               // File typetype32,1030
+    short major;              // Major device number (T_DEVICE only)major33,1073
+    short minor;              // Minor device number (T_DEVICE only)minor34,1142
+    short nlink;              // Number of links to inode in file systemnlink35,1211
+    uint size;                // Size of file (bytes)size36,1284
+    uint addrs[NDIRECT + 1];  // Data block addressesaddrs37,1338
+#define IPB IPB41,1417
+#define IBLOCK(IBLOCK44,1490
+#define BPB BPB47,1566
+#define BBLOCK(BBLOCK50,1639
+#define DIRSIZ DIRSIZ53,1756
+struct dirent {dirent55,1775
+    ushort inum;inum56,1791
+    char name[DIRSIZ];name57,1808
+
+kernel/proc.c,1717
+struct cpu cpus[NCPU];cpus9,139
+struct proc proc[NPROC];proc11,163
+struct proc *initproc;initproc13,189
+int nextpid = 1;nextpid15,213
+struct spinlock pid_lock;pid_lock16,230
+struct spinlock wait_lock;wait_lock27,527
+void proc_mapstacks(pagetable_t kpgtbl) {proc_mapstacks32,671
+void procinit(void) {procinit44,992
+int cpuid() {cpuid59,1382
+struct cpu *mycpu(void) {mycpu66,1500
+struct proc *myproc(void) {myproc73,1650
+int allocpid() {allocpid81,1785
+static struct proc *allocproc(void) {allocproc96,2144
+static void freeproc(struct proc *p) {freeproc140,3148
+pagetable_t proc_pagetable(struct proc *p) {proc_pagetable157,3610
+void proc_freepagetable(pagetable_t pagetable, uint64 sz) {proc_freepagetable186,4495
+uchar initcode[] = {0x17, 0x05, 0x00, 0x00, 0x13, 0x05, 0x45, 0x02, 0x97, 0x05, 0x00, 0x00, 0x93initcode195,4780
+void userinit(void) {userinit201,5204
+int growproc(int n) {growproc226,5840
+int fork(void) {fork244,6274
+void reparent(struct proc *p) {reparent292,7312
+void exit(int status) {exit306,7658
+int wait(uint64 addr) {wait347,8477
+void scheduler(void) {scheduler399,10098
+void sched(void) {sched436,11330
+void yield(void) {yield451,11754
+void forkret(void) {forkret461,11972
+void sleep(void *chan, struct spinlock *lk) {sleep483,12516
+void wakeup(void *chan) {wakeup512,13164
+int kill(int pid) {kill529,13610
+void setkilled(struct proc *p) {setkilled548,14029
+int killed(struct proc *p) {killed554,14130
+int either_copyout(int user_dst, uint64 dst, void *src, uint64 len) {either_copyout566,14369
+int either_copyin(void *dst, int user_src, uint64 src, uint64 len) {either_copyin579,14741
+void procdump(void) {procdump592,15140
+
+kernel/console.c,646
+#define BACKSPACE BACKSPACE25,486
+#define C(x) ((x) - '@')  // CoC26,510
+void consputc(int c) {consputc33,669
+struct {__anonb6393d19010844,916
+    struct spinlock lock;lock45,925
+#define INPUT_BUF_SIZE INPUT_BUF_SIZE48,965
+    char buf[INPUT_BUF_SIZE];buf49,992
+    uint r;  // Read indexr50,1022
+    uint w;  // Write indexw51,1049
+    uint e;  // Edit indexe52,1077
+} cons;cons53,1104
+int consolewrite(int user_src, uint64 src, int n) {consolewrite58,1160
+int consoleread(int user_dst, uint64 dst, int n) {consoleread76,1539
+void consoleintr(int c) {consoleintr129,2846
+void consoleinit(void) {consoleinit172,4100
+
+kernel/types.h,323
+typedef unsigned int uint;uint1,0
+typedef unsigned short ushort;ushort2,27
+typedef unsigned char uchar;uchar3,58
+typedef unsigned char uint8;uint85,88
+typedef unsigned short uint16;uint166,117
+typedef unsigned int uint32;uint327,148
+typedef unsigned long uint64;uint648,177
+typedef uint64 pde_t;pde_t10,208
+
+kernel/printf.c,470
+volatile int panicked = 0;panicked18,270
+static struct {__anonef4e5b79010821,349
+    struct spinlock lock;lock22,365
+    int locking;locking23,391
+} pr;pr24,408
+static char digits[] = "0123456789abcdef";digits26,415
+static void printint(int xx, int base, int sign) {printint28,459
+static void printptr(uint64 x) {printptr48,791
+void printf(char *fmt, ...) {printf57,1047
+void panic(char *s) {panic104,2213
+void printfinit(void) {printfinit113,2385
+
+kernel/start.c,186
+__attribute__((aligned(16))) char stack0[4096 * NCPU];stack011,167
+uint64 timer_scratch[NCPU][5];timer_scratch14,284
+void start() {start20,456
+void timerinit() {timerinit60,1560
+
+kernel/trampoline.S,214
+.globl trampolinetrampoline17,494
+.globl usertrapusertrap18,512
+trampoline:trampoline19,528
+.globl uservecuservec21,549
+uservec:    uservec22,564
+.globl userretuserret100,2639
+userret:userret101,2654
+
+kernel/fs.c,1832
+#define min(min24,694
+struct superblock sb;sb27,822
+static void readsb(int dev, struct superblock *sb) {readsb30,870
+void fsinit(int dev) {fsinit39,1038
+static void bzero(int dev, int bno) {bzero46,1185
+static uint balloc(uint dev) {balloc59,1420
+static void bfree(int dev, uint b) {bfree83,2063
+struct {__anon033c111f0108165,5108
+    struct spinlock lock;lock166,5117
+    struct inode inode[NINODE];inode167,5143
+} itable;itable168,5175
+void iinit() {iinit170,5186
+struct inode *ialloc(uint dev, short type) {ialloc185,5585
+void iupdate(struct inode *ip) {iupdate210,6316
+static struct inode *iget(uint dev, uint inum) {iget229,6866
+struct inode *idup(struct inode *ip) {idup261,7650
+void ilock(struct inode *ip) {ilock270,7844
+void iunlock(struct inode *ip) {iunlock294,8480
+void iput(struct inode *ip) {iput307,8946
+void iunlockput(struct inode *ip) {iunlockput334,9567
+static uint bmap(struct inode *ip, uint bn) {bmap349,10023
+void itrunc(struct inode *ip) {itrunc388,10990
+void stati(struct inode *ip, struct stat *st) {stati417,11636
+int readi(struct inode *ip, int user_dst, uint64 dst, uint off, uint n) {readi429,11960
+int writei(struct inode *ip, int user_src, uint64 src, uint off, uint n) {writei458,12876
+int namecmp(const char *s, const char *t) { return strncmp(s, t, DIRSIZ); }namecmp490,13746
+struct inode *dirlookup(struct inode *dp, char *name, uint *poff) {dirlookup494,13917
+int dirlink(struct inode *dp, char *name, uint inum) {dirlink516,14625
+static char *skipelem(char *path, char *name) {skipelem554,15757
+static struct inode *namex(char *path, int nameiparent, char *name) {namex577,16404
+struct inode *namei(char *path) {namei610,17151
+struct inode *nameiparent(char *path, char *name) { return namex(path, 1, name); }nameiparent615,17244
+
+kernel/buf.h,375
+struct buf {buf1,0
+    int valid;  // has data been read from disk?valid2,13
+    int disk;   // does disk "own" buf?disk3,62
+    uint dev;dev4,102
+    uint blockno;blockno5,116
+    struct sleeplock lock;lock6,134
+    uint refcnt;refcnt7,161
+    struct buf *prev;  // LRU cache listprev8,178
+    struct buf *next;next9,219
+    uchar data[BSIZE];data10,241
+
+kernel/e1000_dev.h,4510
+#define E1000_CTL E1000_CTL7,125
+#define E1000_ICR E1000_ICR8,194
+#define E1000_IMS E1000_IMS9,259
+#define E1000_RCTL E1000_RCTL10,323
+#define E1000_TCTL E1000_TCTL11,379
+#define E1000_TIPG E1000_TIPG12,435
+#define E1000_RDBAL E1000_RDBAL13,499
+#define E1000_RDTR E1000_RDTR14,575
+#define E1000_RADV E1000_RADV15,630
+#define E1000_RDH E1000_RDH16,704
+#define E1000_RDT E1000_RDT17,768
+#define E1000_RDLEN E1000_RDLEN18,832
+#define E1000_RSRPD E1000_RSRPD19,898
+#define E1000_TDBAL E1000_TDBAL20,971
+#define E1000_TDLEN E1000_TDLEN21,1047
+#define E1000_TDH E1000_TDH22,1113
+#define E1000_TDT E1000_TDT23,1177
+#define E1000_MTA E1000_MTA24,1241
+#define E1000_RA E1000_RA25,1314
+#define E1000_CTL_SLU E1000_CTL_SLU28,1403
+#define E1000_CTL_FRCSPD E1000_CTL_FRCSPD29,1458
+#define E1000_CTL_FRCDPLX E1000_CTL_FRCDPLX30,1513
+#define E1000_CTL_RST E1000_CTL_RST31,1569
+#define E1000_TCTL_RST E1000_TCTL_RST34,1647
+#define E1000_TCTL_EN E1000_TCTL_EN35,1702
+#define E1000_TCTL_BCE E1000_TCTL_BCE36,1752
+#define E1000_TCTL_PSP E1000_TCTL_PSP37,1810
+#define E1000_TCTL_CT E1000_TCTL_CT38,1868
+#define E1000_TCTL_CT_SHIFT E1000_TCTL_CT_SHIFT39,1928
+#define E1000_TCTL_COLD E1000_TCTL_COLD40,1958
+#define E1000_TCTL_COLD_SHIFT E1000_TCTL_COLD_SHIFT41,2018
+#define E1000_TCTL_SWXOFF E1000_TCTL_SWXOFF42,2051
+#define E1000_TCTL_PBE E1000_TCTL_PBE43,2115
+#define E1000_TCTL_RTLC E1000_TCTL_RTLC44,2178
+#define E1000_TCTL_NRTU E1000_TCTL_NRTU45,2251
+#define E1000_TCTL_MULR E1000_TCTL_MULR46,2321
+#define E1000_RCTL_RST E1000_RCTL_RST49,2412
+#define E1000_RCTL_EN E1000_RCTL_EN50,2475
+#define E1000_RCTL_SBP E1000_RCTL_SBP51,2530
+#define E1000_RCTL_UPE E1000_RCTL_UPE52,2595
+#define E1000_RCTL_MPE E1000_RCTL_MPE53,2670
+#define E1000_RCTL_LPE E1000_RCTL_LPE54,2745
+#define E1000_RCTL_LBM_NO E1000_RCTL_LBM_NO55,2812
+#define E1000_RCTL_LBM_MAC E1000_RCTL_LBM_MAC56,2877
+#define E1000_RCTL_LBM_SLP E1000_RCTL_LBM_SLP57,2943
+#define E1000_RCTL_LBM_TCVR E1000_RCTL_LBM_TCVR58,3017
+#define E1000_RCTL_DTYP_MASK E1000_RCTL_DTYP_MASK59,3084
+#define E1000_RCTL_DTYP_PS E1000_RCTL_DTYP_PS60,3153
+#define E1000_RCTL_RDMTS_HALF E1000_RCTL_RDMTS_HALF61,3225
+#define E1000_RCTL_RDMTS_QUAT E1000_RCTL_RDMTS_QUAT62,3300
+#define E1000_RCTL_RDMTS_EIGTH E1000_RCTL_RDMTS_EIGTH63,3375
+#define E1000_RCTL_MO_SHIFT E1000_RCTL_MO_SHIFT64,3450
+#define E1000_RCTL_MO_0 E1000_RCTL_MO_065,3521
+#define E1000_RCTL_MO_1 E1000_RCTL_MO_166,3591
+#define E1000_RCTL_MO_2 E1000_RCTL_MO_267,3661
+#define E1000_RCTL_MO_3 E1000_RCTL_MO_368,3731
+#define E1000_RCTL_MDR E1000_RCTL_MDR69,3801
+#define E1000_RCTL_BAM E1000_RCTL_BAM70,3871
+#define E1000_RCTL_SZ_2048 E1000_RCTL_SZ_204872,3995
+#define E1000_RCTL_SZ_1024 E1000_RCTL_SZ_102473,4059
+#define E1000_RCTL_SZ_512 E1000_RCTL_SZ_51274,4123
+#define E1000_RCTL_SZ_256 E1000_RCTL_SZ_25675,4186
+#define E1000_RCTL_SZ_16384 E1000_RCTL_SZ_1638477,4308
+#define E1000_RCTL_SZ_8192 E1000_RCTL_SZ_819278,4377
+#define E1000_RCTL_SZ_4096 E1000_RCTL_SZ_409679,4445
+#define E1000_RCTL_VFE E1000_RCTL_VFE80,4513
+#define E1000_RCTL_CFIEN E1000_RCTL_CFIEN81,4580
+#define E1000_RCTL_CFI E1000_RCTL_CFI82,4650
+#define E1000_RCTL_DPF E1000_RCTL_DPF83,4723
+#define E1000_RCTL_PMCF E1000_RCTL_PMCF84,4792
+#define E1000_RCTL_BSEX E1000_RCTL_BSEX85,4864
+#define E1000_RCTL_SECRC E1000_RCTL_SECRC86,4934
+#define E1000_RCTL_FLXBUF_MASK E1000_RCTL_FLXBUF_MASK87,5001
+#define E1000_RCTL_FLXBUF_SHIFT E1000_RCTL_FLXBUF_SHIFT88,5070
+#define DATA_MAX DATA_MAX90,5141
+#define E1000_TXD_CMD_EOP E1000_TXD_CMD_EOP93,5226
+#define E1000_TXD_CMD_RS E1000_TXD_CMD_RS94,5277
+#define E1000_TXD_STAT_DD E1000_TXD_STAT_DD97,5390
+struct tx_desc {tx_desc100,5467
+    uint64 addr;addr101,5484
+    uint16 length;length102,5501
+    uint8 cso;cso103,5520
+    uint8 cmd;cmd104,5535
+    uint8 status;status105,5550
+    uint8 css;css106,5568
+    uint16 special;special107,5583
+#define E1000_RXD_STAT_DD E1000_RXD_STAT_DD111,5664
+#define E1000_RXD_STAT_EOP E1000_RXD_STAT_EOP112,5718
+struct rx_desc {rx_desc115,5788
+    uint64 addr;   /* Address of the descriptor's data buffer */addr116,5805
+    uint16 length; /* Length of data DMAed into data buffer */length117,5870
+    uint16 csum;   /* Packet checksum */csum118,5933
+    uint8 status;  /* Descriptor status */status119,5974
+    uint8 errors;  /* Descriptor Errors */errors120,6017
+    uint16 special;special121,6060
+
+kernel/sleeplock.h,260
+struct sleeplock {sleeplock2,33
+    uint locked;         // Is the lock held?locked3,52
+    struct spinlock lk;  // spinlock protecting this sleep locklk4,98
+    char *name;  // Name of lock.name7,185
+    int pid;     // Process holding lockpid8,219
+
+kernel/defs.h,30
+#define NELEM(NELEM197,4918
+
+kernel/sysproc.c,371
+uint64 sys_exit(void) {sys_exit9,139
+uint64 sys_getpid(void) { return myproc()->pid; }sys_getpid16,239
+uint64 sys_fork(void) { return fork(); }sys_fork18,290
+uint64 sys_wait(void) {sys_wait20,332
+uint64 sys_sbrk(void) {sys_sbrk26,413
+uint64 sys_sleep(void) {sys_sleep36,566
+uint64 sys_kill(void) {sys_kill55,920
+uint64 sys_uptime(void) {sys_uptime64,1075
+
+kernel/stat.h,367
+#define T_DIR T_DIR1,0
+#define T_FILE T_FILE2,33
+#define T_DEVICE T_DEVICE3,61
+struct stat {stat5,92
+    int dev;      // File system's disk devicedev6,106
+    uint ino;     // Inode numberino7,153
+    short type;   // Type of filetype8,187
+    short nlink;  // Number of links to filenlink9,221
+    uint64 size;  // Size of file in bytessize10,266
+
+kernel/pipe.c,652
+#define PIPESIZE PIPESIZE11,173
+struct pipe {pipe13,195
+    struct spinlock lock;lock14,209
+    char data[PIPESIZE];data15,235
+    uint nread;     // number of bytes readnread16,260
+    uint nwrite;    // number of bytes writtennwrite17,304
+    int readopen;   // read fd is still openreadopen18,351
+    int writeopen;  // write fd is still openwriteopen19,396
+int pipealloc(struct file **f0, struct file **f1) {pipealloc22,446
+void pipeclose(struct pipe *pi, int writable) {pipeclose51,1120
+int pipewrite(struct pipe *pi, uint64 addr, int n) {pipewrite67,1489
+int piperead(struct pipe *pi, uint64 addr, int n) {piperead93,2154
+
+kernel/syscall.h,1081
+#define SYS_fork SYS_fork2,23
+#define SYS_exit SYS_exit3,42
+#define SYS_wait SYS_wait4,61
+#define SYS_pipe SYS_pipe5,80
+#define SYS_read SYS_read6,99
+#define SYS_kill SYS_kill7,118
+#define SYS_exec SYS_exec8,137
+#define SYS_fstat SYS_fstat9,156
+#define SYS_chdir SYS_chdir10,176
+#define SYS_dup SYS_dup11,196
+#define SYS_getpid SYS_getpid12,215
+#define SYS_sbrk SYS_sbrk13,237
+#define SYS_sleep SYS_sleep14,257
+#define SYS_uptime SYS_uptime15,278
+#define SYS_open SYS_open16,300
+#define SYS_write SYS_write17,320
+#define SYS_mknod SYS_mknod18,341
+#define SYS_unlink SYS_unlink19,362
+#define SYS_link SYS_link20,384
+#define SYS_mkdir SYS_mkdir21,404
+#define SYS_close SYS_close22,425
+#define SYS_trace SYS_trace25,472
+#define SYS_sysinfo SYS_sysinfo26,493
+#define SYS_sigalarm SYS_sigalarm27,516
+#define SYS_sigreturn SYS_sigreturn28,540
+#define SYS_symlink SYS_symlink29,565
+#define SYS_mmap SYS_mmap30,588
+#define SYS_munmap SYS_munmap31,608
+#define SYS_connect SYS_connect32,630
+#define SYS_pgaccess SYS_pgaccess33,653
+
+kernel/elf.h,1057
+#define ELF_MAGIC ELF_MAGIC3,37
+struct elfhdr {elfhdr6,114
+    uint magic;  // must equal ELF_MAGICmagic7,130
+    uchar elf[12];elf8,171
+    ushort type;type9,190
+    ushort machine;machine10,207
+    uint version;version11,227
+    uint64 entry;entry12,245
+    uint64 phoff;phoff13,263
+    uint64 shoff;shoff14,281
+    uint flags;flags15,299
+    ushort ehsize;ehsize16,315
+    ushort phentsize;phentsize17,334
+    ushort phnum;phnum18,356
+    ushort shentsize;shentsize19,374
+    ushort shnum;shnum20,396
+    ushort shstrndx;shstrndx21,414
+struct proghdr {proghdr25,465
+    uint32 type;type26,482
+    uint32 flags;flags27,499
+    uint64 off;off28,517
+    uint64 vaddr;vaddr29,533
+    uint64 paddr;paddr30,551
+    uint64 filesz;filesz31,569
+    uint64 memsz;memsz32,588
+    uint64 align;align33,606
+#define ELF_PROG_LOAD ELF_PROG_LOAD37,655
+#define ELF_PROG_FLAG_EXEC ELF_PROG_FLAG_EXEC40,711
+#define ELF_PROG_FLAG_WRITE ELF_PROG_FLAG_WRITE41,740
+#define ELF_PROG_FLAG_READ ELF_PROG_FLAG_READ42,770
+
+kernel/ramdisk.c,94
+void ramdiskinit(void) {}ramdiskinit15,250
+void ramdiskrw(struct buf *b) {ramdiskrw19,410
+
+kernel/proc.h,3964
+struct context {context2,48
+    uint64 ra;ra3,65
+    uint64 sp;sp4,80
+    uint64 s0;s07,116
+    uint64 s1;s18,131
+    uint64 s2;s29,146
+    uint64 s3;s310,161
+    uint64 s4;s411,176
+    uint64 s5;s512,191
+    uint64 s6;s613,206
+    uint64 s7;s714,221
+    uint64 s8;s815,236
+    uint64 s9;s916,251
+    uint64 s10;s1017,266
+    uint64 s11;s1118,282
+struct cpu {cpu22,320
+    struct proc *proc;       // The process running on this cpu, or null.proc23,333
+    struct context context;  // swtch() here to enter scheduler().context24,407
+    int noff;                // Depth of push_off() nesting.noff25,474
+    int intena;              // Were interrupts enabled before push_off()?intena26,535
+struct trapframe {trapframe43,1382
+    /*   0 */ uint64 kernel_satp;    // kernel page tablekernel_satp44,1401
+    /*   8 */ uint64 kernel_sp;      // top of process's kernel stackkernel_sp45,1459
+    /*  16 */ uint64 kernel_trap;    // usertrap()kernel_trap46,1529
+    /*  24 */ uint64 epc;            // saved user program counterepc47,1580
+    /*  32 */ uint64 kernel_hartid;  // saved kernel tpkernel_hartid48,1647
+    /*  40 */ uint64 ra;ra49,1703
+    /*  48 */ uint64 sp;sp50,1728
+    /*  56 */ uint64 gp;gp51,1753
+    /*  64 */ uint64 tp;tp52,1778
+    /*  72 */ uint64 t0;t053,1803
+    /*  80 */ uint64 t1;t154,1828
+    /*  88 */ uint64 t2;t255,1853
+    /*  96 */ uint64 s0;s056,1878
+    /* 104 */ uint64 s1;s157,1903
+    /* 112 */ uint64 a0;a058,1928
+    /* 120 */ uint64 a1;a159,1953
+    /* 128 */ uint64 a2;a260,1978
+    /* 136 */ uint64 a3;a361,2003
+    /* 144 */ uint64 a4;a462,2028
+    /* 152 */ uint64 a5;a563,2053
+    /* 160 */ uint64 a6;a664,2078
+    /* 168 */ uint64 a7;a765,2103
+    /* 176 */ uint64 s2;s266,2128
+    /* 184 */ uint64 s3;s367,2153
+    /* 192 */ uint64 s4;s468,2178
+    /* 200 */ uint64 s5;s569,2203
+    /* 208 */ uint64 s6;s670,2228
+    /* 216 */ uint64 s7;s771,2253
+    /* 224 */ uint64 s8;s872,2278
+    /* 232 */ uint64 s9;s973,2303
+    /* 240 */ uint64 s10;s1074,2328
+    /* 248 */ uint64 s11;s1175,2354
+    /* 256 */ uint64 t3;t376,2380
+    /* 264 */ uint64 t4;t477,2405
+    /* 272 */ uint64 t5;t578,2430
+    /* 280 */ uint64 t6;t679,2455
+enum procstate { UNUSED, USED, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };procstate82,2484
+enum procstate { UNUSED, USED, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };UNUSED82,2484
+enum procstate { UNUSED, USED, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };USED82,2484
+enum procstate { UNUSED, USED, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };SLEEPING82,2484
+enum procstate { UNUSED, USED, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };RUNNABLE82,2484
+enum procstate { UNUSED, USED, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };RUNNING82,2484
+enum procstate { UNUSED, USED, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };ZOMBIE82,2484
+struct proc {proc85,2576
+    struct spinlock lock;lock86,2590
+    enum procstate state;  // Process statestate89,2663
+    void *chan;            // If non-zero, sleeping on chanchan90,2707
+    int killed;            // If non-zero, have been killedkilled91,2767
+    int xstate;            // Exit status to be returned to parent's waitxstate92,2827
+    int pid;               // Process IDpid93,2901
+    struct proc *parent;  // Parent processparent96,2990
+    uint64 kstack;                // Virtual address of kernel stackkstack99,3105
+    uint64 sz;                    // Size of process memory (bytes)sz100,3174
+    pagetable_t pagetable;        // User page tablepagetable101,3242
+    struct trapframe *trapframe;  // data page for trampoline.Strapframe102,3295
+    struct context context;       // swtch() here to run processcontext103,3359
+    struct file *ofile[NOFILE];   // Open filesofile104,3424
+    struct inode *cwd;            // Current directorycwd105,3472
+    char name[16];                // Process name (debugging)name106,3527
+
+kernel/log.c,962
+struct logheader {logheader35,1148
+    int n;n36,1167
+    int block[LOGSIZE];block37,1178
+struct log {log40,1206
+    struct spinlock lock;lock41,1219
+    int start;start42,1245
+    int size;size43,1260
+    int outstanding;  // how many FS sys calls are executing.outstanding44,1274
+    int committing;   // in commit(), please wait.committing45,1336
+    int dev;dev46,1387
+    struct logheader lh;lh47,1400
+struct log log;log49,1428
+void initlog(int dev, struct superblock *sb) {initlog54,1504
+static void install_trans(int recovering) {install_trans65,1822
+static void read_head(void) {read_head80,2422
+static void write_head(void) {write_head94,2807
+static void recover_from_log(void) {recover_from_log106,3100
+void begin_op(void) {begin_op114,3320
+void end_op(void) {end_op132,3849
+static void write_log(void) {write_log161,4581
+static void commit() {commit174,4963
+void log_write(struct buf *b) {log_write193,5621
+
+Makefile,2375
+K=kernelK8,205
+U=userU9,214
+OBJS = \OBJS11,222
+OBJS_KCSAN = \OBJS_KCSAN35,570
+TOOLPREFIX := $(shell if riscv64-unknown-elf-objdump -i 2>&1 | grep 'elf64-big' >/dev/null 2>&1;TOOLPREFIX69,1036
+QEMU = qemu-system-riscv64QEMU81,1625
+CC = $(TOOLPREFIX)gccCC83,1653
+AS = $(TOOLPREFIX)gasAS84,1675
+LD = $(TOOLPREFIX)ldLD85,1697
+OBJCOPY = $(TOOLPREFIX)objcopyOBJCOPY86,1718
+OBJDUMP = $(TOOLPREFIX)objdumpOBJDUMP87,1749
+CFLAGS = -Wall -Werror -O -fno-omit-frame-pointer -ggdb -gdwarf-2CFLAGS89,1781
+LABUPPER = $(shell echo $(LAB) | tr a-z A-Z)LABUPPER92,1858
+KCSANFLAG = -fsanitize=thread -fno-inlineKCSANFLAG109,2296
+LDFLAGS = -z max-page-size=4096LDFLAGS120,2607
+$K/kernel: $(OBJS) $(OBJS_KCSAN) $K/kernel.ld $U/initcode$K/kernel122,2640
+$(OBJS): EXTRAFLAG := $(KCSANFLAG)$(OBJS)127,2895
+$(OBJS): EXTRAFLAG := $(KCSANFLAG)EXTRAFLAG127,2895
+$K/%.o: $K/%.c$K/%.o129,2931
+$U/initcode: $U/initcode.S$U/initcode133,2990
+tags: $(OBJS) _inittags139,3277
+ULIB = $U/ulib.o $U/usys.o $U/printf.o $U/umalloc.oULIB142,3313
+_%: %.o $(ULIB)_%148,3434
+$U/usys.S : $U/usys.pl$U/usys.S153,3591
+$U/usys.o : $U/usys.S$U/usys.o156,3644
+$U/_forktest: $U/forktest.o $(ULIB)$U/_forktest159,3710
+mkfs/mkfs: mkfs/mkfs.c $K/fs.h $K/param.hmkfs/mkfs165,3995
+UPROGS=\UPROGS174,4349
+$U/uthread_switch.o : $U/uthread_switch.S$U/uthread_switch.o220,4823
+$U/_uthread: $U/uthread.o $U/uthread_switch.o $(ULIB)$U/_uthread223,4929
+ph: notxv6/ph.cph227,5122
+barrier: notxv6/barrier.cbarrier230,5189
+UEXTRA=UEXTRA257,5509
+fs.img: mkfs/mkfs README $(UEXTRA) $(UPROGS)fs.img263,5573
+clean:clean268,5694
+GDBPORT = $(shell expr `id -u` % 5000 + 25000)GDBPORT277,5963
+QEMUGDB = $(shell if $(QEMU) -help | grep -q '^-gdb'; \QEMUGDB279,6057
+CPUS := 3CPUS283,6197
+CPUS := 1CPUS286,6230
+FWDPORT = $(shell expr `id -u` % 5000 + 25999)FWDPORT289,6247
+QEMUOPTS = -machine virt -bios none -kernel $K/kernel -m 128M -smp $(CPUS) -nographicQEMUOPTS291,6295
+qemu: $K/kernel fs.imgqemu301,6753
+.gdbinit: .gdbinit.tmpl-riscv.gdbinit304,6798
+qemu-gdb: $K/kernel .gdbinit fs.imgqemu-gdb307,6867
+SERVERPORT = $(shell expr `id -u` % 5000 + 25099)SERVERPORT313,7060
+server:server315,7111
+ping:ping318,7153
+print-gdbport:print-gdbport330,7275
+grade:grade333,7309
+submit-check:submit-check343,7521
+zipball: clean submit-checkzipball365,8179
+
+.gdbinit.tmpl-riscv,0
+
+.editorconfig,0
+
+user/grep.c,287
+char buf[1024];buf8,152
+void grep(char *pattern, int fd) {grep11,196
+int main(int argc, char *argv[]) {main35,707
+int match(char *re, char *text) {match68,1441
+int matchhere(char *re, char *text) {matchhere77,1708
+int matchstar(int c, char *re, char *text) {matchstar86,2064
+
+user/initcode.S,98
+.globl startstart7,110
+start:start8,123
+exit:exit15,227
+init:init21,316
+argv:argv26,384
+
+user/nettests.c,424
+static void ping(uint16 sport, uint16 dport, int attempts) {ping10,189
+static void encode_qname(char *qn, char *host) {encode_qname50,1218
+static void decode_qname(char *qn, int max) {decode_qname66,1585
+static int dns_req(uint8 *obuf) {dns_req84,1971
+static void dns_rep(uint8 *ibuf, int cc) {dns_rep110,2606
+static void dns() {dns211,5421
+#define N N212,5441
+int main(int argc, char *argv[]) {main246,6095
+
+user/ulib.c,662
+void _main() {_main9,166
+char *strcpy(char *s, const char *t) {strcpy15,232
+int strcmp(const char *p, const char *q) {strcmp23,348
+uint strlen(const char *s) {strlen28,465
+void *memset(void *dst, int c, uint n) {memset35,551
+char *strchr(const char *s, char c) {strchr44,709
+char *gets(char *buf, int max) {gets50,823
+int stat(const char *n, struct stat *st) {stat64,1081
+int atoi(const char *s) {atoi75,1258
+void *memmove(void *vdst, const void *vsrc, int n) {memmove83,1384
+int memcmp(const void *s1, const void *s2, uint n) {memcmp99,1684
+void *memcpy(void *dst, const void *src, uint n) { return memmove(dst, src, n); }memcpy111,1911
+
+user/stressfs.c,47
+int main(int argc, char *argv[]) {main16,495
+
+user/init.c,67
+char *argv[] = {"sh", 0};argv12,249
+int main(void) {main14,276
+
+user/echo.c,45
+int main(int argc, char *argv[]) {main5,75
+
+user/usys.pl,24
+sub entry {entry9,155
+
+user/cat.c,101
+char buf[512];buf6,101
+void cat(int fd) {cat8,117
+int main(int argc, char *argv[]) {main23,403
+
+user/pingpong.c,222
+#define N N5,75
+char buf[N];buf6,87
+void pong(int *parent_to_child, int *child_to_parent) {pong8,101
+void ping(int *parent_to_child, int *child_to_parent) {ping18,388
+int main(int argc, char *argv[]) {main28,675
+
+user/sh.c,2136
+#define EXEC EXEC8,120
+#define REDIR REDIR9,135
+#define PIPE PIPE10,151
+#define LIST LIST11,166
+#define BACK BACK12,181
+#define MAXARGS MAXARGS14,197
+struct cmd {cmd16,217
+    int type;type17,230
+struct execcmd {execcmd20,248
+    int type;type21,265
+    char *argv[MAXARGS];argv22,279
+    char *eargv[MAXARGS];eargv23,304
+struct redircmd {redircmd26,334
+    int type;type27,352
+    struct cmd *cmd;cmd28,366
+    char *file;file29,387
+    char *efile;efile30,403
+    int mode;mode31,420
+    int fd;fd32,434
+struct pipecmd {pipecmd35,450
+    int type;type36,467
+    struct cmd *left;left37,481
+    struct cmd *right;right38,503
+struct listcmd {listcmd41,530
+    int type;type42,547
+    struct cmd *left;left43,561
+    struct cmd *right;right44,583
+struct backcmd {backcmd47,610
+    int type;type48,627
+    struct cmd *cmd;cmd49,641
+void runcmd(struct cmd *cmd) {runcmd58,851
+int getcmd(char *buf, int nbuf) {getcmd127,2592
+int main(void) {main136,2761
+void panic(char *s) {panic162,3455
+int fork1(void) {fork1167,3520
+struct cmd *execcmd(void) {execcmd178,3655
+struct cmd *redircmd(struct cmd *subcmd, char *file, char *efile, int mode, int fd) {redircmd187,3830
+struct cmd *pipecmd(struct cmd *left, struct cmd *right) {pipecmd201,4174
+struct cmd *listcmd(struct cmd *left, struct cmd *right) {listcmd212,4426
+struct cmd *backcmd(struct cmd *subcmd) {backcmd223,4678
+char whitespace[] = " \t\r\n\v";whitespace235,4916
+char symbols[] = "<|>&;()";symbols236,4949
+int gettoken(char **ps, char *es, char **q, char **eq) {gettoken238,4978
+int peek(char **ps, char *es, char *toks) {peek276,5752
+struct cmd *parsecmd(char *s) {parsecmd290,6085
+struct cmd *parseline(char **ps, char *es) {parseline305,6362
+struct cmd *parsepipe(char **ps, char *es) {parsepipe320,6689
+struct cmd *parseredirs(struct cmd *cmd, char **ps, char *es) {parseredirs331,6918
+struct cmd *parseblock(char **ps, char *es) {parseblock353,7573
+struct cmd *parseexec(char **ps, char *es) {parseexec365,7887
+struct cmd *nulterminate(struct cmd *cmd) {nulterminate393,8599
+
+user/user.ld,131
+  .text : {.text9,63
+  .rodata : {.rodata13,101
+  .data : {.data21,284
+  .bss : {.bss28,432
+  PROVIDE(end = .);end35,574
+
+user/umalloc.c,447
+typedef long Align;Align9,201
+union header {header11,222
+    struct {__anon3d351ad1010812,237
+        union header *ptr;ptr13,250
+        uint size;size14,277
+    } s;s15,296
+    Align x;x16,305
+typedef union header Header;Header19,322
+static Header base;base21,352
+static Header *freep;freep22,372
+void free(void *ap) {free24,395
+static Header *morecore(uint nu) {morecore43,893
+void *malloc(uint nbytes) {malloc56,1150
+
+user/wc.c,111
+char buf[512];buf6,101
+void wc(int fd, char *name) {wc8,117
+int main(int argc, char *argv[]) {main33,668
+
+user/rm.c,45
+int main(int argc, char *argv[]) {main5,75
+
+user/kill.c,44
+int main(int argc, char **argv) {main5,75
+
+user/usertests.c,5731
+#define BUFSZ BUFSZ20,599
+char buf[BUFSZ];buf22,642
+void copyin(char *s) {copyin32,917
+void copyout(char *s) {copyout74,2067
+void copyinstr1(char *s) {copyinstr1113,3102
+void copyinstr2(char *s) {copyinstr2130,3620
+void copyinstr3(char *s) {copyinstr3188,4994
+void rwsbrk() {rwsbrk231,5986
+void truncate1(char *s) {truncate1275,6929
+void truncate2(char *s) {truncate2332,8297
+void truncate3(char *s) {truncate3351,8692
+void iputtest(char *s) {iputtest403,9994
+void exitiputtest(char *s) {exitiputtest423,10477
+void openiputtest(char *s) {openiputtest461,11392
+void opentest(char *s) {opentest492,12030
+void writetest(char *s) {writetest508,12332
+    enum { N = 100, SZ = 10 };__anon2469bfd60103511,12381
+    enum { N = 100, SZ = 10 };N511,12381
+    enum { N = 100, SZ = 10 };SZ511,12381
+void writebig(char *s) {writebig547,13278
+void createtest(char *s) {createtest599,14495
+    enum { N = 52 };__anon2469bfd60203601,14537
+    enum { N = 52 };N601,14537
+void dirtest(char *s) {dirtest619,14869
+void exectest(char *s) {exectest641,15284
+void pipe1(char *s) {pipe1694,16483
+    enum { N = 5, SZ = 1033 };__anon2469bfd60303697,16565
+    enum { N = 5, SZ = 1033 };N697,16565
+    enum { N = 5, SZ = 1033 };SZ697,16565
+void killstatus(char *s) {killstatus744,17777
+void preempt(char *s) {preempt771,18327
+void exitwait(char *s) {exitwait821,19304
+void reparent(char *s) {reparent849,19971
+void twochildren(char *s) {twochildren875,20581
+void forkfork(char *s) {forkfork901,21190
+    enum { N = 2 };__anon2469bfd60403902,21215
+    enum { N = 2 };N902,21215
+void forkforkfork(char *s) {forkforkfork935,21925
+void reparent2(char *s) {reparent2968,22789
+void mem(char *s) {mem987,23155
+void sharedfd(char *s) {sharedfd1025,23998
+    enum { N = 1000, SZ = 10 };__anon2469bfd605031027,24054
+    enum { N = 1000, SZ = 10 };N1027,24054
+    enum { N = 1000, SZ = 10 };SZ1027,24054
+void fourfiles(char *s) {fourfiles1077,25283
+    enum { N = 12, NCHILD = 4, SZ = 500 };__anon2469bfd606031081,25409
+    enum { N = 12, NCHILD = 4, SZ = 500 };N1081,25409
+    enum { N = 12, NCHILD = 4, SZ = 500 };NCHILD1081,25409
+    enum { N = 12, NCHILD = 4, SZ = 500 };SZ1081,25409
+void createdelete(char *s) {createdelete1140,26869
+    enum { N = 20, NCHILD = 4 };__anon2469bfd607031141,26898
+    enum { N = 20, NCHILD = 4 };N1141,26898
+    enum { N = 20, NCHILD = 4 };NCHILD1141,26898
+void unlinkread(char *s) {unlinkread1208,28737
+    enum { SZ = 5 };__anon2469bfd608031209,28764
+    enum { SZ = 5 };SZ1209,28764
+void linktest(char *s) {linktest1250,29693
+    enum { SZ = 5 };__anon2469bfd609031251,29718
+    enum { SZ = 5 };SZ1251,29718
+void concreate(char *s) {concreate1308,30949
+    enum { N = 40 };__anon2469bfd60a031309,30975
+    enum { N = 40 };N1309,30975
+    struct {__anon2469bfd60b081313,31053
+        ushort inum;inum1314,31066
+        char name[DIRSIZ];name1315,31087
+void linkunlink(char *s) {linkunlink1402,33311
+void subdir(char *s) {subdir1430,33838
+void bigwrite(char *s) {bigwrite1608,38361
+void bigfile(char *s) {bigfile1631,38933
+    enum { N = 20, SZ = 600 };__anon2469bfd60c031632,38957
+    enum { N = 20, SZ = 600 };N1632,38957
+    enum { N = 20, SZ = 600 };SZ1632,38957
+void fourteen(char *s) {fourteen1681,40145
+void rmdot(char *s) {rmdot1725,41523
+void dirfile(char *s) {dirfile1760,42341
+void iref(char *s) {iref1815,43723
+void forktest(char *s) {forktest1849,44549
+    enum { N = 1000 };__anon2469bfd60d031850,44574
+    enum { N = 1000 };N1850,44574
+void sbrkbasic(char *s) {sbrkbasic1882,45159
+    enum { TOOMUCH = 1024 * 1024 * 1024 };__anon2469bfd60e031883,45185
+    enum { TOOMUCH = 1024 * 1024 * 1024 };TOOMUCH1883,45185
+void sbrkmuch(char *s) {sbrkmuch1943,46583
+    enum { BIG = 100 * 1024 * 1024 };__anon2469bfd60f031944,46608
+    enum { BIG = 100 * 1024 * 1024 };BIG1944,46608
+void kernmem(char *s) {kernmem2001,48059
+void MAXVAplus(char *s) {MAXVAplus2023,48625
+void sbrkfail(char *s) {sbrkfail2046,49198
+    enum { BIG = 100 * 1024 * 1024 };__anon2469bfd610032047,49223
+    enum { BIG = 100 * 1024 * 1024 };BIG2047,49223
+void sbrkarg(char *s) {sbrkarg2109,50942
+void validatetest(char *s) {validatetest2134,51454
+char uninit[10000];uninit2149,51838
+void bsstest(char *s) {bsstest2150,51858
+void bigargtest(char *s) {bigargtest2164,52200
+void fsfull() {fsfull2199,53253
+void argptest(char *s) {argptest2246,54430
+void stacktest(char *s) {stacktest2259,54720
+void textwrite(char *s) {textwrite2282,55245
+void *big = (void *)0xeaeb0b5b00002f5e;big2305,55817
+void pgbug(char *s) {pgbug2306,55857
+void sbrkbugs(char *s) {sbrkbugs2318,56152
+void sbrklast(char *s) {sbrklast2374,57542
+void sbrk8000(char *s) {sbrk80002395,58040
+void badarg(char *s) {badarg2403,58294
+struct test {test2414,58488
+    void (*f)(char *);f2415,58502
+    char *s;s2416,58525
+} quicktests[] = {quicktests2417,58538
+void bigdir(char *s) {bigdir2487,60371
+    enum { N = 500 };__anon2469bfd611032488,60394
+    enum { N = 500 };N2488,60394
+void manywrites(char *s) {manywrites2527,61257
+void badwrite(char *s) {badwrite2581,62903
+void execout(char *s) {execout2614,63669
+void diskfull(char *s) {diskfull2645,64503
+void outofinodes(char *s) {outofinodes2721,66476
+struct test slowtests[] = {slowtests2750,67156
+int run(void f(char *), char *s) {run2767,67486
+int runtests(struct test *tests, char *justone, int continuous) {runtests2789,67899
+int countfree() {countfree2809,68542
+int drivetests(int quick, int continuous, char *justone) {drivetests2866,69630
+int main(int argc, char *argv[]) {main2894,70460
+
+user/ls.c,122
+char *fmtname(char *path) {fmtname7,124
+void ls(char *path) {ls22,496
+int main(int argc, char *argv[]) {main68,1722
+
+user/printf.c,431
+static char digits[] = "0123456789ABCDEF";digits7,96
+static void putc(int fd, char c) { write(fd, &c, 1); }putc9,140
+static void printint(int fd, int xx, int base, int sgn) {printint11,196
+static void printptr(int fd, uint64 x) {printptr33,570
+void vprintf(int fd, const char *fmt, va_list ap) {vprintf42,835
+void fprintf(int fd, const char *fmt, ...) {fprintf85,2101
+void printf(const char *fmt, ...) {printf92,2215
+
+user/forktest.c,153
+#define N N8,180
+void print(const char *s) { write(1, s, strlen(s)); }print10,196
+void forktest(void) {forktest12,251
+int main(void) {main43,779
+
+user/ln.c,45
+int main(int argc, char *argv[]) {main5,75
+
+user/mkdir.c,45
+int main(int argc, char *argv[]) {main5,75
+
+user/zombie.c,28
+int main(void) {main8,139
+
+user/grind.c,249
+int do_rand(unsigned long *ctx) {do_rand16,306
+unsigned long rand_next = 1;rand_next39,942
+int rand(void) { return (do_rand(&rand_next)); }rand41,972
+void go(int which_child) {go43,1022
+void iter() {iter283,8732
+int main() {main321,9316
+
+user/user.h,0
+
+LICENSE,0
+
+grade-lab-net,312
+r = Runner(save("xv6.out"))r7,76
+def test_nettest():test_nettest10,134
+def test_nettest_():test_nettest_19,418
+def test_nettest_():test_nettest_23,532
+def test_nettest_fork_test():test_nettest_fork_test27,661
+def test_nettest_dns_test():test_nettest_dns_test31,788
+def test_time():test_time40,1008
+
+server.py,281
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)sock4,26
+addr = ('localhost', int(sys.argv[1]))addr5,82
+    buf, raddr = sock.recvfrom(4096)buf10,207
+    buf, raddr = sock.recvfrom(4096)raddr10,207
+        sent = sock.sendto(b'this is the host!', raddr)sent13,304
+
+README,0

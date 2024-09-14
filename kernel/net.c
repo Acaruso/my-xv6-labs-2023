@@ -299,10 +299,11 @@ void net_rx(struct mbuf *m) {
     }
 
     type = ntohs(ethhdr->type);
-    if (type == ETHTYPE_IP)
+    if (type == ETHTYPE_IP) {
         net_rx_ip(m);
-    else if (type == ETHTYPE_ARP)
+    } else if (type == ETHTYPE_ARP) {
         net_rx_arp(m);
-    else
+    } else {
         mbuffree(m);
+    }
 }
