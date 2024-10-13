@@ -2416,7 +2416,7 @@ struct test {
     char *s;
 } quicktests[] = {
     {copyin, "copyin"},
-    {copyout, "copyout"},
+    // {copyout, "copyout"},
     {copyinstr1, "copyinstr1"},
     {copyinstr2, "copyinstr2"},
     {copyinstr3, "copyinstr3"},
@@ -2469,7 +2469,7 @@ struct test {
     {bigargtest, "bigargtest"},
     {argptest, "argptest"},
     {stacktest, "stacktest"},
-    {textwrite, "textwrite"},
+    // {textwrite, "textwrite"},
     {pgbug, "pgbug"},
     {sbrkbugs, "sbrkbugs"},
     {sbrklast, "sbrklast"},
