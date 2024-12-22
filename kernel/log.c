@@ -107,7 +107,7 @@ static void recover_from_log(void) {
     read_head();
     install_trans(1);  // if committed, copy from log to disk
     log.lh.n = 0;
-    write_head();  // clear the log
+    write_head();      // clear the log
 }
 
 // called at the start of each FS system call.
