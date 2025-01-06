@@ -347,57 +347,119 @@ void iunlockput(struct inode *ip) {
 // Return the disk block address of the nth block in inode ip.
 // If there is no such block, bmap allocates one.
 // returns 0 if out of disk space.
+
+static uint bmap_direct(struct inode *inode, uint n);
+static uint bmap_singly_indirect(struct inode *inode, uint n);
+static uint bmap_doubly_indirect(struct inode *inode, uint n);
+
 static uint bmap(struct inode *inode, uint n) {
     if (n < NDIRECT) {
-        uint nth_block_addr = inode->addrs[n];
-
-        // if nth block doesn't exist, try to allocate it
-        if (nth_block_addr == 0) {
-            nth_block_addr = balloc(inode->dev);
-            if (nth_block_addr == 0) {
-                // allocation failed
-                return 0;
-            }
-            inode->addrs[n] = nth_block_addr;
-        }
-
-        return nth_block_addr;
+        return bmap_direct(inode, n);
     }
 
     n -= NDIRECT;
 
     if (n < NINDIRECT) {
-        uint indirect_block_addr = inode->addrs[NDIRECT];
-
-        // if indirect block doesn't exist, try to allocate it
-        if (indirect_block_addr == 0) {
-            indirect_block_addr = balloc(inode->dev);
-            if (indirect_block_addr == 0) {
-                // allocation failed
-                return 0;
-            }
-            inode->addrs[NDIRECT] = indirect_block_addr;
+        if (n < N_SINGLY_INDIRECT) {
+            return bmap_singly_indirect(inode, n);
+        } else {
+            n -= (BSIZE / sizeof(uint));
+            return bmap_doubly_indirect(inode, n);
         }
-
-        struct buf *indirect_block_buf = bread(inode->dev, indirect_block_addr);
-
-        uint *indirect_block_data = (uint *)indirect_block_buf->data;
-
-        uint nth_block_addr = indirect_block_data[n];
-        if (nth_block_addr == 0) {
-            nth_block_addr = balloc(inode->dev);
-            if (nth_block_addr) {
-                indirect_block_data[n] = nth_block_addr;
-                log_write(indirect_block_buf);
-            }
-        }
-
-        brelse(indirect_block_buf);
-
-        return nth_block_addr;
     }
 
     panic("bmap: out of range");
+}
+
+static uint bmap_direct(struct inode *inode, uint n) {
+    uint nth_block_addr = inode->addrs[n];
+    if (nth_block_addr == 0) {
+        nth_block_addr = balloc(inode->dev);
+        if (nth_block_addr == 0) {
+            return 0;
+        }
+        inode->addrs[n] = nth_block_addr;
+    }
+
+    return nth_block_addr;
+}
+
+static uint bmap_singly_indirect(struct inode *inode, uint n) {
+    uint indirect_block_addr = inode->addrs[SINGLY_INDIRECT_IDX];
+    if (indirect_block_addr == 0) {
+        indirect_block_addr = balloc(inode->dev);
+        if (indirect_block_addr == 0) {
+            return 0;
+        }
+        inode->addrs[SINGLY_INDIRECT_IDX] = indirect_block_addr;
+    }
+
+    struct buf *indirect_block_buf = bread(inode->dev, indirect_block_addr);
+    uint *indirect_block_data = (uint *)indirect_block_buf->data;
+
+    uint nth_block_addr = indirect_block_data[n];
+    if (nth_block_addr == 0) {
+        nth_block_addr = balloc(inode->dev);
+        if (nth_block_addr == 0) {
+            brelse(indirect_block_buf);
+            return 0;
+        }
+        indirect_block_data[n] = nth_block_addr;
+        log_write(indirect_block_buf);
+    }
+
+    brelse(indirect_block_buf);
+
+    return nth_block_addr;
+}
+
+static uint bmap_doubly_indirect(struct inode *inode, uint n) {
+    uint level_1_blockno = inode->addrs[DOUBLY_INDIRECT_IDX];
+    if (level_1_blockno == 0) {
+        level_1_blockno = balloc(inode->dev);
+        if (level_1_blockno == 0) {
+            return 0;
+        }
+        inode->addrs[DOUBLY_INDIRECT_IDX] = level_1_blockno;
+    }
+
+    struct buf *level_1_buf = bread(inode->dev, level_1_blockno);
+    uint *level_1_data = (uint *)level_1_buf->data;
+
+    int level_1_idx = n / 256;
+
+    uint level_2_blockno = level_1_data[level_1_idx];
+    if (level_2_blockno == 0) {
+        level_2_blockno = balloc(inode->dev);
+        if (level_2_blockno == 0) {
+            brelse(level_1_buf);
+            return 0;
+        }
+        level_1_data[level_1_idx] = level_2_blockno;
+        log_write(level_1_buf);
+    }
+
+    struct buf *level_2_buf = bread(inode->dev, level_2_blockno);
+    uint *level_2_data = (uint *)level_2_buf->data;
+
+    int level_2_idx = n % 256;
+
+    uint data_block_blockno = level_2_data[level_2_idx];
+    if (data_block_blockno == 0) {
+        data_block_blockno = balloc(inode->dev);
+        if (data_block_blockno == 0) {
+            brelse(level_2_buf);
+            brelse(level_1_buf);
+            return 0;
+        }
+        level_2_data[level_2_idx] = data_block_blockno;
+        log_write(level_2_buf);
+    }
+
+    brelse(level_2_buf);
+    brelse(level_1_buf);
+
+    return data_block_blockno;
 }
 
 // Truncate inode (discard contents).
@@ -410,17 +472,44 @@ void itrunc(struct inode *inode) {
         }
     }
 
-    if (inode->addrs[NDIRECT]) {
-        struct buf *buf = bread(inode->dev, inode->addrs[NDIRECT]);
+    // handle singly indirect block
+    if (inode->addrs[SINGLY_INDIRECT_IDX] != 0) {
+        struct buf *buf = bread(inode->dev, inode->addrs[SINGLY_INDIRECT_IDX]);
         uint *buf_data = (uint *)buf->data;
-        for (int i = 0; i < NINDIRECT; i++) {
+        for (int i = 0; i < N_SINGLY_INDIRECT; i++) {
             if (buf_data[i] != 0) {
                 bfree(inode->dev, buf_data[i]);
             }
         }
         brelse(buf);
-        bfree(inode->dev, inode->addrs[NDIRECT]);
-        inode->addrs[NDIRECT] = 0;
+        bfree(inode->dev, inode->addrs[SINGLY_INDIRECT_IDX]);
+        inode->addrs[SINGLY_INDIRECT_IDX] = 0;
+    }
+
+    // handle doubly indirect block
+    if (inode->addrs[DOUBLY_INDIRECT_IDX] != 0) {
+        struct buf *level_1_buf = bread(inode->dev, inode->addrs[DOUBLY_INDIRECT_IDX]);
+        uint *level_1_data = (uint *)level_1_buf->data;
+
+        for (int i = 0; i < BLOCKNOS_PER_BLOCK; i++) {
+            if (level_1_data[i] != 0) {
+                struct buf *level_2_buf = bread(inode->dev, level_1_data[i]);
+                uint *level_2_data = (uint *)level_2_buf->data;
+
+                for (int k = 0; k < BLOCKNOS_PER_BLOCK; k++) {
+                    if (level_2_data[k] != 0) {
+                        bfree(inode->dev, level_2_data[k]);
+                    }
+                }
+
+                brelse(level_2_buf);
+                bfree(inode->dev, level_1_data[i]);
+            }
+        }
+
+        brelse(level_1_buf);
+        bfree(inode->dev, inode->addrs[DOUBLY_INDIRECT_IDX]);
+        inode->addrs[DOUBLY_INDIRECT_IDX] = 0;
     }
 
     inode->size = 0;
