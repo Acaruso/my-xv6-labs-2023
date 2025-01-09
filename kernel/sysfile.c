@@ -556,6 +556,10 @@ uint64 sys_pipe(void) {
     return 0;
 }
 
+int sys_symlink(void) {
+    return 0;
+}
+
 #ifdef LAB_NET
 int sys_connect(void) {
     struct file *f;
