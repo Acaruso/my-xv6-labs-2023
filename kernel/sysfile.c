@@ -104,7 +104,7 @@ uint64 sys_fstat(void) {
     return filestat(f, st);
 }
 
-// Create the path `new` as a link to the same inode as `old`
+// Create the path `new_path` as a link to the same inode as `old_path`
 uint64 sys_link(void) {
     char old_path[MAXPATH];
     char new_path[MAXPATH];
@@ -262,6 +262,11 @@ static struct inode *create(char *path, short type, short major, short minor) {
     char name[DIRSIZ];
     int rc = 0;
 
+    // return inode at second to last path element
+    // write last path element into `name`
+    // example:
+    //   path = /a/b/c.txt
+    //   return inode at `b`, write `"c.txt"` into `name`
     struct inode *parent_inode = nameiparent(path, name);
     if (parent_inode == 0) {
         return 0;
@@ -329,6 +334,8 @@ fail:
     return 0;
 }
 
+struct inode *follow_symlink(struct inode *inode);
+
 uint64 sys_open(void) {
     char path[MAXPATH];
     if (argstr(0, path, MAXPATH) < 0) {
@@ -342,7 +349,7 @@ uint64 sys_open(void) {
 
     struct inode *inode;
     if (omode & O_CREATE) {
-        inode = create(path, T_FILE, 0, 0);
+        inode = create(path, T_FILE, 0, 0);     // returns inode with lock held
         if (inode == 0) {
             end_op();
             return -1;
@@ -368,6 +375,16 @@ uint64 sys_open(void) {
         iunlockput(inode);
         end_op();
         return -1;
+    }
+
+    if (inode->type == T_SYMLINK && (omode & O_NOFOLLOW) == 0) {
+        inode = follow_symlink(inode);
+        // if `follow_symlink` failed, it also unlocked `inode`, so we don't need to unlock it
+        if (inode == 0) {
+            end_op();
+            return -1;
+        }
+        ilock(inode);
     }
 
     struct file *file = filealloc();
@@ -401,6 +418,51 @@ uint64 sys_open(void) {
     end_op();
 
     return fd;
+}
+
+// return inode with lock held
+struct inode *follow_symlink(struct inode *inode) {
+    char path[MAXPATH];
+    int num_iterations = 0;
+    struct inode *cur_inode = inode;
+    struct inode *next_inode = 0;
+
+    while (1) {
+        int rc = readi(
+            cur_inode,      // inode
+            0,              // user_dst
+            (uint64)path,   // dst
+            0,              // offset
+            MAXPATH         // n
+        );
+        if (rc == 0) {
+            iunlock(inode);
+            return 0;
+        }
+
+        iunlock(inode);
+
+        next_inode = namei(path);  // returns inode without lock held
+        if (inode == 0) {
+            return 0;
+        }
+
+        ilock(next_inode);
+
+        if (next_inode->type != T_SYMLINK) {
+            return inode;
+        }
+
+        num_iterations++;
+
+        if (num_iterations > 10) {
+            break;
+        }
+
+        cur_inode = next_inode;
+    }
+
+    return 0;
 }
 
 uint64 sys_mkdir(void) {
@@ -556,7 +618,44 @@ uint64 sys_pipe(void) {
     return 0;
 }
 
+// symlink(target, path)
+// creates a new symlink at location `path` that points to the file at `target`
 int sys_symlink(void) {
+    char target[MAXPATH];
+    if (argstr(0, target, MAXPATH) < 0) {
+        return -1;
+    }
+
+    char path[MAXPATH];
+    if (argstr(1, path, MAXPATH) < 0) {
+        return -1;
+    }
+
+    begin_op();
+
+    // create new inode to represent the symlink
+    struct inode *new_inode = create(path, T_SYMLINK, 0, 0);    // returns inode with lock held
+    if (new_inode == 0) {
+        end_op();
+        return -1;
+    }
+
+    // write `target` to `new_inode`s data block at offset `0`
+    int rc = writei(
+        new_inode,         // inode
+        0,                 // user_src
+        (uint64)target,    // src
+        0,                 // offset
+        MAXPATH            // n
+    );
+    if (rc != MAXPATH) {
+        end_op();
+        return -1;
+    }
+
+    iunlockput(new_inode);
+    end_op();
+
     return 0;
 }
 
