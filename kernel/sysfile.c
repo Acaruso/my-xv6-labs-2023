@@ -378,13 +378,12 @@ uint64 sys_open(void) {
     }
 
     if (inode->type == T_SYMLINK && (omode & O_NOFOLLOW) == 0) {
-        inode = follow_symlink(inode);
+        inode = follow_symlink(inode);  // return inode with lock held
         // if `follow_symlink` failed, it also unlocked `inode`, so we don't need to unlock it
         if (inode == 0) {
             end_op();
             return -1;
         }
-        ilock(inode);
     }
 
     struct file *file = filealloc();
@@ -422,10 +421,10 @@ uint64 sys_open(void) {
 
 // return inode with lock held
 struct inode *follow_symlink(struct inode *inode) {
-    char path[MAXPATH];
-    int num_iterations = 0;
     struct inode *cur_inode = inode;
     struct inode *next_inode = 0;
+    char path[MAXPATH];
+    int num_iterations = 0;
 
     while (1) {
         int rc = readi(
@@ -436,30 +435,29 @@ struct inode *follow_symlink(struct inode *inode) {
             MAXPATH         // n
         );
         if (rc == 0) {
-            iunlock(inode);
+            iunlock(cur_inode);
             return 0;
         }
 
-        iunlock(inode);
+        iunlock(cur_inode);
 
         next_inode = namei(path);  // returns inode without lock held
-        if (inode == 0) {
+        if (next_inode == 0) {
             return 0;
         }
 
         ilock(next_inode);
 
         if (next_inode->type != T_SYMLINK) {
-            return inode;
-        }
-
-        num_iterations++;
-
-        if (num_iterations > 10) {
-            break;
+            return next_inode;
         }
 
         cur_inode = next_inode;
+
+        num_iterations++;
+        if (num_iterations > 10) {
+            break;
+        }
     }
 
     return 0;
