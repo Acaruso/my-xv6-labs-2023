@@ -421,41 +421,38 @@ uint64 sys_open(void) {
 
 // return inode with lock held
 struct inode *follow_symlink(struct inode *inode) {
-    struct inode *cur_inode = inode;
-    struct inode *next_inode = 0;
     char path[MAXPATH];
     int num_iterations = 0;
 
     while (1) {
         int rc = readi(
-            cur_inode,      // inode
+            inode,          // inode
             0,              // user_dst
             (uint64)path,   // dst
             0,              // offset
             MAXPATH         // n
         );
         if (rc == 0) {
-            iunlock(cur_inode);
+            iunlockput(inode);
             return 0;
         }
 
-        iunlock(cur_inode);
+        iunlockput(inode);
 
-        next_inode = namei(path);  // returns inode without lock held
-        if (next_inode == 0) {
+        inode = namei(path);  // returns inode without lock held
+        if (inode == 0) {
             return 0;
         }
 
-        ilock(next_inode);
+        ilock(inode);
 
-        if (next_inode->type != T_SYMLINK) {
-            return next_inode;
+        if (inode->type != T_SYMLINK) {
+            return inode;
         }
-
-        cur_inode = next_inode;
 
         num_iterations++;
         if (num_iterations > 10) {
+            iunlockput(inode);
             break;
         }
     }
