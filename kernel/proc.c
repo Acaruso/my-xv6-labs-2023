@@ -612,3 +612,25 @@ void procdump(void) {
         printf("\n");
     }
 }
+
+struct vma* get_vma(uint64 va) {
+    struct vma *vma_table = myproc()->vma_table;
+    struct vma *vma = 0;
+    for (int i = 0; i < 16; i++) {
+        vma = &vma_table[i];
+        if (vma->in_use == 1 && va >= vma->address && va < vma->address + vma->len) {
+            return vma;
+        }
+    }
+    return 0;
+}
+
+void print_vma(struct vma *vma) {
+    printf("vma:\n");
+    printf("    address:    %p\n", vma->address);
+    printf("    len:        %d\n", vma->len);
+    printf("    prot:       %p\n", vma->prot);
+    printf("    flags:      %p\n", vma->flags);
+    printf("    in_use:     %d\n", vma->in_use);
+    printf("    file:       %p\n", vma->file);
+}

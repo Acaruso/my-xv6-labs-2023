@@ -153,3 +153,15 @@ int filewrite(struct file *f, uint64 addr, int n) {
 
     return ret;
 }
+
+void file_increment_ref(struct file *f) {
+    acquire(&ftable.lock);
+    f->ref++;
+    release(&ftable.lock);
+}
+
+void file_decrement_ref(struct file *f) {
+    acquire(&ftable.lock);
+    f->ref--;
+    release(&ftable.lock);
+}

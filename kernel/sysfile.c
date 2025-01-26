@@ -15,6 +15,7 @@
 #include "sleeplock.h"
 #include "file.h"
 #include "fcntl.h"
+#include "memlayout.h"
 
 // Fetch the nth word-sized system call argument as a file descriptor
 // and return both the descriptor and the corresponding struct file.
@@ -439,8 +440,71 @@ uint64 sys_pipe(void) {
     return 0;
 }
 
+// signature: `void *mmap(void *addr, size_t len, int prot, int flags, int fd, off_t offset)`
 uint64 sys_mmap(void) {
-    return -1;
+    // assume the first argument, `addr`, is `0`
+    // assume that the last argument, `offset`, is always `0`
+
+    int len;
+    argint(1, &len);
+
+    int prot;
+    argint(2, &prot);
+
+    int flags;
+    argint(3, &flags);
+
+    int fd;
+    argint(4, &fd);
+
+    struct proc *p = myproc();
+
+    uint64 va = TRAMPOLINE - (2 * PGSIZE);
+    uint64 region_addr = 0;
+    int region_len = 0;
+    int found_region = 0;
+    while (1) {
+        if (get_vma(va) == 0) {       // `va` is free
+            region_len += PGSIZE;
+            region_addr = va;
+        } else {
+            region_len = 0;
+        }
+
+        if (region_len >= len) {
+            found_region = 1;
+            break;
+        }
+
+        va -= PGSIZE;
+    }
+
+    if (found_region == 0) {
+        printf("ERROR mmap: couldn't find large enough region\n");
+        return 0xffffffffffffffff;
+    }
+
+    // store in p->vma_table
+    struct vma *vma = 0;
+    for (int i = 0; i < 16; i++) {
+        vma = &p->vma_table[i];
+        if (vma->in_use == 0) {
+            file_increment_ref(p->ofile[fd]);
+            vma->address = region_addr;
+            vma->len     = len;
+            vma->prot    = prot;
+            vma->flags   = flags;
+            vma->file    = p->ofile[fd];
+            vma->in_use  = 1;
+            break;
+        }
+    }
+    if (vma == 0) {
+        printf("ERROR mmap: couldn't allocate new vma\n");
+        return 0xffffffffffffffff;
+    }
+
+    return vma->address;
 }
 
 uint64 sys_munmap(void) {

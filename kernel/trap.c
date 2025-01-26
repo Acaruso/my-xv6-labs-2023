@@ -5,6 +5,10 @@
 #include "spinlock.h"
 #include "proc.h"
 #include "defs.h"
+#include "fcntl.h"
+#include "sleeplock.h"
+#include "fs.h"
+#include "file.h"
 
 struct spinlock tickslock;
 uint ticks;
@@ -25,6 +29,11 @@ void trapinithart(void) { w_stvec((uint64)kernelvec); }
 // handle an interrupt, exception, or system call from user space.
 // called from trampoline.S
 //
+
+int is_page_fault(uint64 scause);
+int is_mmap_page_fault(uint64 scause, uint64 va, struct vma* vma);
+int handle_mmap_page_fault(uint64 va, struct vma* vma);
+
 void usertrap(void) {
     int which_dev = 0;
 
@@ -56,9 +65,28 @@ void usertrap(void) {
     } else if ((which_dev = devintr()) != 0) {
         // ok
     } else {
-        printf("usertrap(): unexpected scause %p pid=%d\n", r_scause(), p->pid);
-        printf("            sepc=%p stval=%p\n", r_sepc(), r_stval());
-        setkilled(p);
+        uint64 scause = r_scause();
+        int should_kill = 1;
+
+        if (is_page_fault(scause)) {
+            uint64 va = r_stval();
+            struct vma* vma = get_vma(va);
+            if (vma != 0) {
+                if (is_mmap_page_fault(scause, va, vma)) {
+                    should_kill = 0;
+                    int rc = handle_mmap_page_fault(va, vma);
+                    if (rc != 0) {
+                        should_kill = 1;
+                    }
+                }
+            }
+        }
+
+        if (should_kill == 1) {
+            printf("usertrap(): unexpected scause %p pid=%d\n", r_scause(), p->pid);
+            printf("            sepc=%p stval=%p\n", r_sepc(), r_stval());
+            setkilled(p);
+        }
     }
 
     if (killed(p)) exit(-1);
@@ -67,6 +95,95 @@ void usertrap(void) {
     if (which_dev == 2) yield();
 
     usertrapret();
+}
+
+int is_page_fault(uint64 scause) {
+    if (
+        scause    == SCAUSE_PAGE_FAULT_INSTR
+        || scause == SCAUSE_PAGE_FAULT_LOAD
+        || scause == SCAUSE_PAGE_FAULT_STORE
+    ) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+int is_mmap_page_fault(uint64 scause, uint64 va, struct vma* vma) {
+    if (
+        scause == SCAUSE_PAGE_FAULT_INSTR
+        && (vma->prot & PROT_EXEC)
+    ) {
+        return 1;
+    } else if (
+        scause == SCAUSE_PAGE_FAULT_LOAD
+        && (vma->prot & PROT_READ)
+    ) {
+        return 1;
+    } else if (
+        scause == SCAUSE_PAGE_FAULT_STORE
+        && (vma->prot & PROT_WRITE)
+    ) {
+        return 1;
+    }
+
+    return 0;
+}
+
+int handle_mmap_page_fault(uint64 va, struct vma* vma) {
+    char *pa = kalloc();
+    if (pa == 0) {
+        return -1;
+    }
+
+    memset(pa, 0, PGSIZE);
+
+    struct inode *inode = vma->file->ip;
+
+    begin_op();
+
+    ilock(inode);
+
+    int file_offset = PGROUNDDOWN(va) - vma->address;
+    int bytes_to_read = (file_offset + PGSIZE < inode->size)
+        ? PGSIZE
+        : inode->size % PGSIZE;
+
+    // read `PGSIZE` bytes from `inode` into newly allocated physical page `pa`
+    int rc = readi(
+        inode,          // inode
+        0,              // user_dst
+        (uint64)pa,     // dst
+        file_offset,    // offset
+        bytes_to_read   // n
+    );
+    if (rc != bytes_to_read) {
+        iunlock(inode);
+        end_op();
+        return -1;
+    }
+
+    // PTE bits are `UXWRV` and VMA bits are `XWR`, so left shift VMA bits by 1
+    int perm = vma->prot << 1;
+    perm = perm | PTE_U;            // don't forget to set PTE_U
+
+    rc = mappages(
+        myproc()->pagetable,
+        (uint64)PGROUNDDOWN(va),
+        (uint64)PGSIZE,
+        (uint64)pa,
+        perm
+    );
+    if (rc != 0) {
+        iunlock(inode);
+        end_op();
+        return -1;
+    }
+
+    iunlock(inode);
+    end_op();
+
+    return 0;
 }
 
 //
