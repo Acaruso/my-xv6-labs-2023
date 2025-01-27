@@ -337,6 +337,14 @@ void exit(int status) {
 
     release(&wait_lock);
 
+    // release vma memory
+    for (int i = 0; i < 16; i++) {
+        struct vma *vma = &p->vma_table[i];
+        if (vma->in_use) {
+            munmap(vma->addr, vma->len);
+        }
+    }
+
     // Jump into the scheduler, never to return.
     sched();
     panic("zombie exit");
@@ -618,7 +626,7 @@ struct vma* get_vma(uint64 va) {
     struct vma *vma = 0;
     for (int i = 0; i < 16; i++) {
         vma = &vma_table[i];
-        if (vma->in_use == 1 && va >= vma->address && va < vma->address + vma->len) {
+        if (vma->in_use == 1 && va >= vma->addr && va < vma->addr + vma->len) {
             return vma;
         }
     }
@@ -627,7 +635,7 @@ struct vma* get_vma(uint64 va) {
 
 void print_vma(struct vma *vma) {
     printf("vma:\n");
-    printf("    address:    %p\n", vma->address);
+    printf("    address:    %p\n", vma->addr);
     printf("    len:        %d\n", vma->len);
     printf("    prot:       %p\n", vma->prot);
     printf("    flags:      %p\n", vma->flags);

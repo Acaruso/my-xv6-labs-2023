@@ -159,6 +159,9 @@ int fetchstr(uint64, char *, int);
 int fetchaddr(uint64, uint64 *);
 void syscall();
 
+// sysfile.c
+uint64 munmap(uint64 unmap_addr, size_t unmap_len);
+
 // trap.c
 extern uint ticks;
 void trapinit(void);

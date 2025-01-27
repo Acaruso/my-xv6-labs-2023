@@ -459,6 +459,12 @@ uint64 sys_mmap(void) {
 
     struct proc *p = myproc();
 
+    struct file* file = p->ofile[fd];
+    if (!file->writable && (flags & MAP_SHARED)) {
+        printf("ERROR mmap: tried to map a read only file with MAP_SHARED\n");
+        return 0xffffffffffffffff;
+    }
+
     uint64 va = TRAMPOLINE - (2 * PGSIZE);
     uint64 region_addr = 0;
     int region_len = 0;
@@ -490,12 +496,13 @@ uint64 sys_mmap(void) {
         vma = &p->vma_table[i];
         if (vma->in_use == 0) {
             file_increment_ref(p->ofile[fd]);
-            vma->address = region_addr;
-            vma->len     = len;
-            vma->prot    = prot;
-            vma->flags   = flags;
-            vma->file    = p->ofile[fd];
-            vma->in_use  = 1;
+            vma->addr          = region_addr;
+            vma->original_addr = region_addr;
+            vma->len           = len;
+            vma->prot          = prot;
+            vma->flags         = flags;
+            vma->file          = p->ofile[fd];
+            vma->in_use        = 1;
             break;
         }
     }
@@ -504,9 +511,101 @@ uint64 sys_mmap(void) {
         return 0xffffffffffffffff;
     }
 
-    return vma->address;
+    return vma->addr;
 }
 
+// signature: int munmap(void *addr, size_t len);
+// remove mmappings starting at `addr`, for `len` bytes
+// `addr` is a multiple of `PGSIZE`
+
 uint64 sys_munmap(void) {
-    return -1;
+    uint64 unmap_addr;
+    argaddr(0, &unmap_addr);
+
+    int unmap_len;
+    argint(1, &unmap_len);
+
+    return munmap(unmap_addr, unmap_len);
+}
+
+int write_back(struct inode *inode, uint64 src, uint64 offset, int len);
+
+uint64 munmap(uint64 unmap_addr, size_t unmap_len) {
+    struct vma *vma = get_vma(unmap_addr);
+    if (vma == 0) {
+        printf("ERROR: couldn't find vma\n");
+        return -1;
+    }
+    print_vma(vma);
+
+    if (vma->flags & MAP_SHARED) {
+        struct inode *inode = vma->file->ip;
+        uint64 offset = unmap_addr - vma->original_addr;
+        if (offset < inode->size) {
+            int rc = write_back(inode, unmap_addr, offset, unmap_len);
+            if (rc != 0) {
+                printf("ERROR: write_back failed\n");
+                return -1;
+            }
+        }
+    }
+
+    if (unmap_addr == vma->addr) {
+        // unmapping stuff at beginning of range
+        vma->addr += PGROUNDUP(unmap_len);
+        vma->len  -= PGROUNDUP(unmap_len);
+    } else {
+        // unmapping stuff at end of range
+        vma->len -= unmap_len;
+    }
+
+    for (uint64 i = unmap_addr; i < unmap_addr + PGROUNDUP(unmap_len); i += PGSIZE) {
+        // need to check if page was ever allocated in the first place
+        // if so, free it, otherwise do nothing
+        pte_t *pte = walk(myproc()->pagetable, i, 0);
+        printf("pte: %p\n", pte);
+        if (*pte & PTE_V) {
+            uvmunmap(
+                myproc()->pagetable,
+                i,
+                1,
+                1
+            );
+        }
+    }
+
+    if (vma->len == 0) {
+        vma->in_use = 0;
+        file_decrement_ref(vma->file);
+    }
+
+    return 0;
+}
+
+int write_back(struct inode *inode, uint64 src, uint64 offset, int len) {
+    begin_op();
+
+    ilock(inode);
+
+    if (offset >= inode->size) {
+        return 0;
+    }
+
+    int rc = writei(
+        inode,          // inode
+        1,              // user_dst
+        src,            // src
+        offset,         // offset
+        len             // n
+    );
+    if (rc != len) {
+        iunlock(inode);
+        end_op();
+        return -1;
+    }
+
+    iunlock(inode);
+    end_op();
+
+    return 0;
 }

@@ -135,32 +135,33 @@ int handle_mmap_page_fault(uint64 va, struct vma* vma) {
     if (pa == 0) {
         return -1;
     }
-
     memset(pa, 0, PGSIZE);
 
-    struct inode *inode = vma->file->ip;
-
     begin_op();
-
+    struct inode *inode = vma->file->ip;
     ilock(inode);
 
-    int file_offset = PGROUNDDOWN(va) - vma->address;
-    int bytes_to_read = (file_offset + PGSIZE < inode->size)
-        ? PGSIZE
-        : inode->size % PGSIZE;
+    int file_offset = PGROUNDDOWN(va) - vma->addr;
+    int rc = 0;
 
-    // read `PGSIZE` bytes from `inode` into newly allocated physical page `pa`
-    int rc = readi(
-        inode,          // inode
-        0,              // user_dst
-        (uint64)pa,     // dst
-        file_offset,    // offset
-        bytes_to_read   // n
-    );
-    if (rc != bytes_to_read) {
-        iunlock(inode);
-        end_op();
-        return -1;
+    if (file_offset < inode->size) {
+        int bytes_to_read = (file_offset + PGSIZE < inode->size)
+            ? PGSIZE
+            : inode->size % PGSIZE;
+
+        // read `bytes_to_read` bytes from `inode` into newly allocated physical page `pa`
+        rc = readi(
+            inode,          // inode
+            0,              // user_dst
+            (uint64)pa,     // dst
+            file_offset,    // offset
+            bytes_to_read   // n
+        );
+        if (rc != bytes_to_read) {
+            iunlock(inode);
+            end_op();
+            return -1;
+        }
     }
 
     // PTE bits are `UXWRV` and VMA bits are `XWR`, so left shift VMA bits by 1
