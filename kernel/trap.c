@@ -141,23 +141,21 @@ int handle_mmap_page_fault(uint64 va, struct vma* vma) {
     struct inode *inode = vma->file->ip;
     ilock(inode);
 
-    int file_offset = PGROUNDDOWN(va) - vma->addr;
+    uint file_offset = PGROUNDDOWN(va) - vma->addr;
     int rc = 0;
 
     if (file_offset < inode->size) {
-        int bytes_to_read = (file_offset + PGSIZE < inode->size)
-            ? PGSIZE
-            : inode->size % PGSIZE;
+        uint n = (file_offset + PGSIZE <= inode->size) ? PGSIZE : inode->size % PGSIZE;
 
-        // read `bytes_to_read` bytes from `inode` into newly allocated physical page `pa`
+        // read `n` bytes from `inode` into newly allocated physical page `pa`
         rc = readi(
             inode,          // inode
             0,              // user_dst
             (uint64)pa,     // dst
             file_offset,    // offset
-            bytes_to_read   // n
+            n               // n
         );
-        if (rc != bytes_to_read) {
+        if (rc != n) {
             iunlock(inode);
             end_op();
             return -1;

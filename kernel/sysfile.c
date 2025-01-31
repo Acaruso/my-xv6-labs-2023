@@ -460,7 +460,11 @@ uint64 sys_mmap(void) {
     struct proc *p = myproc();
 
     struct file* file = p->ofile[fd];
-    if (!file->writable && (flags & MAP_SHARED)) {
+    if (
+        !file->writable
+        && (flags & MAP_SHARED)
+        && (prot  & PROT_WRITE)
+    ) {
         printf("ERROR mmap: tried to map a read only file with MAP_SHARED\n");
         return 0xffffffffffffffff;
     }
@@ -533,10 +537,11 @@ int write_back(struct inode *inode, uint64 src, uint64 offset, int len);
 uint64 munmap(uint64 unmap_addr, size_t unmap_len) {
     struct vma *vma = get_vma(unmap_addr);
     if (vma == 0) {
-        printf("ERROR: couldn't find vma\n");
         return -1;
     }
-    print_vma(vma);
+    if (!vma->in_use) {
+        return -1;
+    }
 
     if (vma->flags & MAP_SHARED) {
         struct inode *inode = vma->file->ip;
@@ -551,19 +556,18 @@ uint64 munmap(uint64 unmap_addr, size_t unmap_len) {
     }
 
     if (unmap_addr == vma->addr) {
-        // unmapping stuff at beginning of range
+        // unmapping at beginning of range
         vma->addr += PGROUNDUP(unmap_len);
         vma->len  -= PGROUNDUP(unmap_len);
     } else {
-        // unmapping stuff at end of range
+        // unmapping at end of range
         vma->len -= unmap_len;
     }
 
     for (uint64 i = unmap_addr; i < unmap_addr + PGROUNDUP(unmap_len); i += PGSIZE) {
-        // need to check if page was ever allocated in the first place
+        // check if the page was ever allocated in the first place
         // if so, free it, otherwise do nothing
         pte_t *pte = walk(myproc()->pagetable, i, 0);
-        printf("pte: %p\n", pte);
         if (*pte & PTE_V) {
             uvmunmap(
                 myproc()->pagetable,
@@ -587,21 +591,25 @@ int write_back(struct inode *inode, uint64 src, uint64 offset, int len) {
 
     ilock(inode);
 
-    if (offset >= inode->size) {
-        return 0;
-    }
+    for (uint64 i = src; i < src + len; i += PGSIZE, offset += PGSIZE) {
+        pte_t *pte = walk(myproc()->pagetable, i, 0);
 
-    int rc = writei(
-        inode,          // inode
-        1,              // user_dst
-        src,            // src
-        offset,         // offset
-        len             // n
-    );
-    if (rc != len) {
-        iunlock(inode);
-        end_op();
-        return -1;
+        if (*pte & PTE_V) {
+            int n = (i + PGSIZE <= src + inode->size) ? PGSIZE : inode->size % PGSIZE;
+
+            int rc = writei(
+                inode,          // inode
+                1,              // user_src
+                i,              // src
+                offset,         // offset
+                n               // n
+            );
+            if (rc != n) {
+                iunlock(inode);
+                end_op();
+                return -1;
+            }
+        }
     }
 
     iunlock(inode);

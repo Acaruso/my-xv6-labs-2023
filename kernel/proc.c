@@ -276,6 +276,17 @@ int fork(void) {
 
     release(&np->lock);
 
+    // copy vma_table
+    for (int i = 0; i < 16; i++) {
+        struct vma *p_vma  = &p->vma_table[i];
+        struct vma *np_vma = &np->vma_table[i];
+
+        if (p_vma->in_use) {
+            *np_vma = *p_vma;
+            file_increment_ref(np_vma->file);
+        }
+    }
+
     acquire(&wait_lock);
     np->parent = p;
     release(&wait_lock);
@@ -317,6 +328,15 @@ void exit(int status) {
         }
     }
 
+    // release vma memory
+    // do this before acquiring p->lock to avoid lock ordering issue
+    for (int i = 0; i < 16; i++) {
+        struct vma *vma = &p->vma_table[i];
+        if (vma->in_use) {
+            munmap(vma->addr, vma->len);
+        }
+    }
+
     begin_op();
     iput(p->cwd);
     end_op();
@@ -336,14 +356,6 @@ void exit(int status) {
     p->state = ZOMBIE;
 
     release(&wait_lock);
-
-    // release vma memory
-    for (int i = 0; i < 16; i++) {
-        struct vma *vma = &p->vma_table[i];
-        if (vma->in_use) {
-            munmap(vma->addr, vma->len);
-        }
-    }
 
     // Jump into the scheduler, never to return.
     sched();
