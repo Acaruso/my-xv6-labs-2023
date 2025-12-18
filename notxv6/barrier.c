@@ -25,12 +25,15 @@ static void barrier() {
 
     bstate.nthread++;
 
-    if (bstate.nthread < nthread) {
-        pthread_cond_wait(&bstate.barrier_cond, &bstate.barrier_mutex);
-    } else {
+    if (bstate.nthread == nthread) {
         bstate.round++;
         bstate.nthread = 0;
         pthread_cond_broadcast(&bstate.barrier_cond);
+    } else {
+        int cur_round = bstate.round;
+        while (cur_round == bstate.round) {
+            pthread_cond_wait(&bstate.barrier_cond, &bstate.barrier_mutex);
+        }
     }
 
     pthread_mutex_unlock(&bstate.barrier_mutex);
