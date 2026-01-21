@@ -37,7 +37,9 @@ char *mbufpush(struct mbuf *m, unsigned int len) {
 char *mbufput(struct mbuf *m, unsigned int len) {
     char *tmp = m->head + m->len;
     m->len += len;
-    if (m->len > MBUF_SIZE) panic("mbufput");
+    if (m->len > MBUF_SIZE) {
+        panic("mbufput");
+    }
     return tmp;
 }
 
@@ -86,10 +88,14 @@ struct mbuf *mbufq_pophead(struct mbufq *q) {
 }
 
 // Returns one (nonzero) if the queue is empty.
-int mbufq_empty(struct mbufq *q) { return q->head == 0; }
+int mbufq_empty(struct mbufq *q) {
+    return q->head == 0;
+}
 
 // Intializes a queue of mbufs.
-void mbufq_init(struct mbufq *q) { q->head = 0; }
+void mbufq_init(struct mbufq *q) {
+    q->head = 0;
+}
 
 // This code is lifted from FreeBSD's ping.c, and is copyright by the Regents
 // of the University of California.
@@ -126,52 +132,55 @@ static unsigned short in_cksum(const unsigned char *addr, int len) {
 
 // sends an ethernet packet
 static void net_tx_eth(struct mbuf *m, uint16 ethtype) {
-    struct eth *ethhdr;
+    struct eth *ethhdr = mbufpushhdr(m, *ethhdr);
 
-    ethhdr = mbufpushhdr(m, *ethhdr);
-    memmove(ethhdr->shost, local_mac, ETHADDR_LEN);
+    memmove(
+        ethhdr->shost,      // dest
+        local_mac,          // source
+        ETHADDR_LEN         // n
+    );
+
     // In a real networking stack, dhost would be set to the address discovered
     // through ARP. Because we don't support enough of the ARP protocol, set it
     // to broadcast instead.
-    memmove(ethhdr->dhost, broadcast_mac, ETHADDR_LEN);
+    memmove(
+        ethhdr->dhost,      // dest
+        broadcast_mac,      // source
+        ETHADDR_LEN         // n
+    );
+
     ethhdr->type = htons(ethtype);
-    if (e1000_transmit(m)) {
+
+    int rc = e1000_transmit(m);
+    if (rc) {
         mbuffree(m);
     }
 }
 
 // sends an IP packet
-static void net_tx_ip(struct mbuf *m, uint8 proto, uint32 dip) {
-    struct ip *iphdr;
-
-    // push the IP header
-    iphdr = mbufpushhdr(m, *iphdr);
+static void net_tx_ip(struct mbuf *m, uint8 proto, uint32 dest_ip) {
+    struct ip *iphdr = mbufpushhdr(m, *iphdr);
     memset(iphdr, 0, sizeof(*iphdr));
     iphdr->ip_vhl = (4 << 4) | (20 >> 2);
-    iphdr->ip_p = proto;
+    iphdr->ip_p   = proto;
     iphdr->ip_src = htonl(local_ip);
-    iphdr->ip_dst = htonl(dip);
+    iphdr->ip_dst = htonl(dest_ip);
     iphdr->ip_len = htons(m->len);
     iphdr->ip_ttl = 100;
     iphdr->ip_sum = in_cksum((unsigned char *)iphdr, sizeof(*iphdr));
 
-    // now on to the ethernet layer
     net_tx_eth(m, ETHTYPE_IP);
 }
 
 // sends a UDP packet
-void net_tx_udp(struct mbuf *m, uint32 dip, uint16 sport, uint16 dport) {
-    struct udp *udphdr;
+void net_tx_udp(struct mbuf *m, uint32 dest_ip, uint16 source_port, uint16 dest_port) {
+    struct udp *udp_header = mbufpushhdr(m, *udp_header);
+    udp_header->sport = htons(source_port);
+    udp_header->dport = htons(dest_port);
+    udp_header->ulen = htons(m->len);
+    udp_header->sum = 0;  // zero means no checksum is provided
 
-    // put the UDP header
-    udphdr = mbufpushhdr(m, *udphdr);
-    udphdr->sport = htons(sport);
-    udphdr->dport = htons(dport);
-    udphdr->ulen = htons(m->len);
-    udphdr->sum = 0;  // zero means no checksum is provided
-
-    // now on to the IP layer
-    net_tx_ip(m, IPPROTO_UDP, dip);
+    net_tx_ip(m, IPPROTO_UDP, dest_ip);
 }
 
 // sends an ARP packet

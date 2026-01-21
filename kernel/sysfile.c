@@ -64,23 +64,29 @@ uint64 sys_dup(void) {
 
 uint64 sys_read(void) {
     struct file *f;
-    int n;
     uint64 p;
+    int n;
 
+    if (argfd(0, 0, &f) < 0) {
+        return -1;
+    }
     argaddr(1, &p);
     argint(2, &n);
-    if (argfd(0, 0, &f) < 0) return -1;
+
     return fileread(f, p, n);
 }
 
 uint64 sys_write(void) {
     struct file *f;
-    int n;
     uint64 p;
+    int n;
+
+    if (argfd(0, 0, &f) < 0) {
+        return -1;
+    }
 
     argaddr(1, &p);
     argint(2, &n);
-    if (argfd(0, 0, &f) < 0) return -1;
 
     return filewrite(f, p, n);
 }
@@ -558,18 +564,21 @@ uint64 sys_pipe(void) {
 
 #ifdef LAB_NET
 int sys_connect(void) {
-    struct file *f;
-    int fd;
     uint32 raddr;
     uint32 rport;
     uint32 lport;
-
     argint(0, (int *)&raddr);
     argint(1, (int *)&lport);
     argint(2, (int *)&rport);
 
-    if (sockalloc(&f, raddr, lport, rport) < 0) return -1;
-    if ((fd = fdalloc(f)) < 0) {
+    struct file *f;
+    int rc = sockalloc(&f, raddr, lport, rport);
+    if (rc < 0) {
+        return -1;
+    }
+
+    int fd = fdalloc(f);
+    if (fd < 0) {
         fileclose(f);
         return -1;
     }

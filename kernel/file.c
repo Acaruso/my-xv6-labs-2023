@@ -79,8 +79,8 @@ void fileclose(struct file *file_ptr) {
         end_op();
     }
 #ifdef LAB_NET
-    else if (ff.type == FD_SOCK) {
-        sockclose(ff.sock);
+    else if (file.type == FD_SOCK) {
+        sockclose(file.sock);
     }
 #endif
 }

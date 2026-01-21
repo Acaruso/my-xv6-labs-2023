@@ -7,40 +7,44 @@
 // send a UDP packet to the localhost (outside of qemu),
 // and receive a response.
 //
-static void ping(uint16 sport, uint16 dport, int attempts) {
+static void ping(uint16 source_port, uint16 dest_port, int attempts) {
     int fd;
-    char *obuf = "a message from xv6!";
-    uint32 dst;
+    int rc;
+    char *out_buf = "a message from xv6!";
 
     // 10.0.2.2, which qemu remaps to the external host,
     // i.e. the machine you're running qemu on.
-    dst = (10 << 24) | (0 << 16) | (2 << 8) | (2 << 0);
+    uint32 dest_ip_addr = (10 << 24) | (0 << 16) | (2 << 8) | (2 << 0);
 
     // you can send a UDP packet to any Internet address
-    // by using a different dst.
+    // by using a different dest_ip_addr.
 
-    if ((fd = connect(dst, sport, dport)) < 0) {
+    fd = connect(dest_ip_addr, source_port, dest_port);
+    if (fd < 0) {
         fprintf(2, "ping: connect() failed\n");
         exit(1);
     }
 
     for (int i = 0; i < attempts; i++) {
-        if (write(fd, obuf, strlen(obuf)) < 0) {
+        rc = write(fd, out_buf, strlen(out_buf));
+        if (rc < 0) {
             fprintf(2, "ping: send() failed\n");
             exit(1);
         }
     }
 
-    char ibuf[128];
-    int cc = read(fd, ibuf, sizeof(ibuf) - 1);
-    if (cc < 0) {
+    char in_buf[128];
+    int read_size = read(fd, in_buf, sizeof(in_buf) - 1);
+    if (read_size < 0) {
         fprintf(2, "ping: recv() failed\n");
         exit(1);
     }
 
     close(fd);
-    ibuf[cc] = '\0';
-    if (strcmp(ibuf, "this is the host!") != 0) {
+
+    in_buf[read_size] = '\0';
+    rc = strcmp(in_buf, "this is the host!");
+    if (rc != 0) {
         fprintf(2, "ping didn't receive correct payload\n");
         exit(1);
     }

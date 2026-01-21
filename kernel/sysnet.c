@@ -26,45 +26,61 @@ struct sock {
 static struct spinlock lock;
 static struct sock *sockets;
 
-void sockinit(void) { initlock(&lock, "socktbl"); }
+void sockinit(void) {
+    initlock(&lock, "socktbl");
+}
 
-int sockalloc(struct file **f, uint32 raddr, uint16 lport, uint16 rport) {
-    struct sock *si, *pos;
+// raddr - dest ip address, lport - source port, rport - dest port
+int sockalloc(struct file **file, uint32 raddr, uint16 lport, uint16 rport) {
+    struct sock *sock = 0;
 
-    si = 0;
-    *f = 0;
-    if ((*f = filealloc()) == 0) goto bad;
-    if ((si = (struct sock *)kalloc()) == 0) goto bad;
+    *file = 0;
+    *file = filealloc();
+    if (*file == 0) {
+        goto bad;
+    }
 
-    // initialize objects
-    si->raddr = raddr;
-    si->lport = lport;
-    si->rport = rport;
-    initlock(&si->lock, "sock");
-    mbufq_init(&si->rxq);
-    (*f)->type = FD_SOCK;
-    (*f)->readable = 1;
-    (*f)->writable = 1;
-    (*f)->sock = si;
+    sock = (struct sock *)kalloc();
+    if (sock == 0) {
+        goto bad;
+    }
 
-    // add to list of sockets
+    sock->raddr = raddr;
+    sock->lport = lport;
+    sock->rport = rport;
+    initlock(&sock->lock, "sock");
+    mbufq_init(&sock->rxq);           // do `sock->rxq.head = 0`
+                                      // recall that `head` is the
+                                      // current start position of the buffer
+    (*file)->type = FD_SOCK;
+    (*file)->readable = 1;
+    (*file)->writable = 1;
+    (*file)->sock = sock;
+
+    // add the socket to the list
     acquire(&lock);
-    pos = sockets;
-    while (pos) {
-        if (pos->raddr == raddr && pos->lport == lport && pos->rport == rport) {
+
+    // first check that we're not adding a duplicate socket to the list
+    struct sock *cur_sock = sockets;
+    while (cur_sock) {
+        if (cur_sock->raddr == raddr && cur_sock->lport == lport && cur_sock->rport == rport) {
             release(&lock);
             goto bad;
         }
-        pos = pos->next;
+        cur_sock = cur_sock->next;
     }
-    si->next = sockets;
-    sockets = si;
+
+    // add the socket to the list
+    sock->next = sockets;
+    sockets = sock;
+
     release(&lock);
+
     return 0;
 
 bad:
-    if (si) kfree((char *)si);
-    if (*f) fileclose(*f);
+    if (sock) kfree((char *)sock);
+    if (*file) fileclose(*file);
     return -1;
 }
 
@@ -93,70 +109,97 @@ void sockclose(struct sock *si) {
     kfree((char *)si);
 }
 
-int sockread(struct sock *si, uint64 addr, int n) {
-    struct proc *pr = myproc();
-    struct mbuf *m;
-    int len;
+int sockread(struct sock *sock, uint64 addr, int n) {
+    struct proc *p = myproc();
 
-    acquire(&si->lock);
-    while (mbufq_empty(&si->rxq) && !pr->killed) {
-        sleep(&si->rxq, &si->lock);
+    acquire(&sock->lock);
+
+    while (mbufq_empty(&sock->rxq) && !p->killed) {
+        sleep(&sock->rxq, &sock->lock);
     }
-    if (pr->killed) {
-        release(&si->lock);
+
+    if (p->killed) {
+        release(&sock->lock);
         return -1;
     }
-    m = mbufq_pophead(&si->rxq);
-    release(&si->lock);
 
-    len = m->len;
-    if (len > n) len = n;
-    if (copyout(pr->pagetable, addr, m->head, len) == -1) {
+    struct mbuf *m = mbufq_pophead(&sock->rxq);
+
+    release(&sock->lock);
+
+    int len = m->len;
+    if (len > n) {
+        len = n;
+    }
+
+    int rc = copyout(
+        p->pagetable,       // pagetable
+        addr,               // dest_va
+        m->head,            // source
+        len                 // len
+    );
+    if (rc == -1) {
         mbuffree(m);
         return -1;
     }
+
     mbuffree(m);
+
     return len;
 }
 
-int sockwrite(struct sock *si, uint64 addr, int n) {
-    struct proc *pr = myproc();
-    struct mbuf *m;
+int sockwrite(struct sock *sock, uint64 addr, int n) {
+    struct proc *p = myproc();
 
-    m = mbufalloc(MBUF_DEFAULT_HEADROOM);
-    if (!m) return -1;
+    struct mbuf *m = mbufalloc(MBUF_DEFAULT_HEADROOM);
+    if (!m) {
+        return -1;
+    }
 
-    if (copyin(pr->pagetable, mbufput(m, n), addr, n) == -1) {
+    int rc = copyin(
+        p->pagetable,       // pagetable
+        mbufput(m, n),      // dest
+        addr,               // source_va
+        n                   // len
+    );
+    if (rc == -1) {
         mbuffree(m);
         return -1;
     }
-    net_tx_udp(m, si->raddr, si->lport, si->rport);
+
+    net_tx_udp(m, sock->raddr, sock->lport, sock->rport);
+
     return n;
 }
 
-// called by protocol handler layer to deliver UDP packets
+// Find the socket that handles this mbuf and deliver it, waking
+// any sleeping reader. Free the mbuf if there are no sockets
+// registered to handle it.
 void sockrecvudp(struct mbuf *m, uint32 raddr, uint16 lport, uint16 rport) {
-    //
-    // Find the socket that handles this mbuf and deliver it, waking
-    // any sleeping reader. Free the mbuf if there are no sockets
-    // registered to handle it.
-    //
-    struct sock *si;
-
     acquire(&lock);
-    si = sockets;
-    while (si) {
-        if (si->raddr == raddr && si->lport == lport && si->rport == rport) goto found;
-        si = si->next;
+
+    struct sock *s = sockets;
+    while (s) {
+        if (
+            s->raddr == raddr
+            && s->lport == lport
+            && s->rport == rport
+        ) {
+            goto found;
+        }
+        s = s->next;
     }
+
     release(&lock);
+
     mbuffree(m);
+
     return;
 
 found:
-    acquire(&si->lock);
-    mbufq_pushtail(&si->rxq, m);
-    wakeup(&si->rxq);
-    release(&si->lock);
+    acquire(&s->lock);
+    mbufq_pushtail(&s->rxq, m);
+    wakeup(&s->rxq);
+    release(&s->lock);
     release(&lock);
 }
