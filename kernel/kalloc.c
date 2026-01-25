@@ -55,13 +55,14 @@ void kfree(void *pa) {
 
     push_off();
     int cpu_id = cpuid();
-    pop_off();
+
     struct kmem *kmem = &kmem_arr[cpu_id];
 
     acquire(&kmem->lock);
     r->next = kmem->freelist;
     kmem->freelist = r;
     release(&kmem->lock);
+    pop_off();
 }
 
 // Allocate one 4096-byte page of physical memory.
@@ -72,7 +73,7 @@ void *kalloc(void) {
 
     push_off();
     int cpu_id = cpuid();
-    pop_off();
+
     struct kmem *kmem = &kmem_arr[cpu_id];
 
     acquire(&kmem->lock);
@@ -82,6 +83,7 @@ void *kalloc(void) {
         kmem = find_free_memory(cpu_id);
         if (kmem == 0) {
             // system is out of memory
+            pop_off();
             return 0;
         }
         // else if kmem != 0, then free memory was found
@@ -89,12 +91,14 @@ void *kalloc(void) {
         r = kmem->freelist;
         kmem->freelist = r->next;
         release(&kmem->lock);
+        pop_off();
         memset((char *)r, 5, PGSIZE);
         return (void *)r;
     } else {
         r = kmem->freelist;
         kmem->freelist = r->next;
         release(&kmem->lock);
+        pop_off();
         memset((char *)r, 5, PGSIZE);
         return (void *)r;
     }
