@@ -32,7 +32,7 @@ struct bcache {
 
 struct bcache bcache;
 
-void add_to_bucket(int bucket_idx, struct buf *b);
+void move_to_bucket(int table_idx, struct buf *b);
 
 void binit(void) {
     for (int i = 0; i < BUF_TABLE_SIZE; i++) {
@@ -42,8 +42,15 @@ void binit(void) {
     }
 
     for (int i = 0; i < NBUF; i++) {
-        add_to_bucket(0, &bcache.buf_arr[i]);
+        bcache.buf_arr[i].prev = 0;
+        bcache.buf_arr[i].next = 0;
+        bcache.buf_arr[i].refcnt = 0;
+        bcache.buf_arr[i].valid = 0;
+        bcache.buf_arr[i].dev = 0;
+        bcache.buf_arr[i].blockno = 0;
+        bcache.buf_arr[i].disk = 0;
         initsleeplock(&bcache.buf_arr[i].lock, "buffer");
+        move_to_bucket(0, &bcache.buf_arr[i]);
     }
 }
 
@@ -52,6 +59,7 @@ static struct buf *bget(uint dev, uint blockno) {
 
     acquire(&bcache.buf_table_locks[table_idx]);
 
+    // search the cache for the data
     struct buf *b = bcache.buf_table[table_idx].next;
     while (b != 0) {
         if (b->dev == dev && b->blockno == blockno) {
@@ -63,7 +71,9 @@ static struct buf *bget(uint dev, uint blockno) {
         b = b->next;
     }
 
-    // check current bucket for free buf
+    // if we got to this point, we didn't find the data in the cache.
+    // now we need to find and return a free buf.
+    // search the current bucket for a free buf.
     b = bcache.buf_table[table_idx].next;
     while (b != 0) {
         if (b->refcnt == 0) {
@@ -78,32 +88,56 @@ static struct buf *bget(uint dev, uint blockno) {
         b = b->next;
     }
 
-    // check other buckets for free buf
+    // if we got to this point, we didn't find a free buf in the current bucket.
+    // search the other buckets for a free buf and move it into the current bucket.
+    release(&bcache.buf_table_locks[table_idx]);
+
     for (int i = 1; i < BUF_TABLE_SIZE; i++) {
-        uint new_table_idx = (blockno + i) % BUF_TABLE_SIZE;
-        acquire(&bcache.buf_table_locks[new_table_idx]);
-        b = bcache.buf_table[new_table_idx].next;
-        while (b != 0) {
+        uint victim_table_idx = (blockno + i) % BUF_TABLE_SIZE;
+
+        uint smaller_idx = victim_table_idx < table_idx ? victim_table_idx : table_idx;
+        uint larger_idx  = victim_table_idx > table_idx ? victim_table_idx : table_idx;
+
+        acquire(&bcache.buf_table_locks[smaller_idx]);
+        acquire(&bcache.buf_table_locks[larger_idx]);
+
+        // re-check table_idx to see if a duplicate block was added to `bcache.buf_table_locks[table_idx]`
+        // in the time between `release(&bcache.buf_table_locks[table_idx])`
+        // and `acquire(&bcache.buf_table_locks[table_idx])`.
+        for (b = bcache.buf_table[table_idx].next; b != 0; b = b->next) {
+            if (b->dev == dev && b->blockno == blockno) {
+                b->refcnt++;
+                release(&bcache.buf_table_locks[larger_idx]);
+                release(&bcache.buf_table_locks[smaller_idx]);
+                acquiresleep(&b->lock);
+                return b;
+            }
+        }
+
+        for (b = bcache.buf_table[victim_table_idx].next; b != 0; b = b->next) {
             if (b->refcnt == 0) {
                 b->dev = dev;
                 b->blockno = blockno;
                 b->valid = 0;
                 b->refcnt = 1;
-                add_to_bucket(table_idx, b);
-                release(&bcache.buf_table_locks[new_table_idx]);
-                release(&bcache.buf_table_locks[table_idx]);
+                move_to_bucket(table_idx, b);
+                release(&bcache.buf_table_locks[larger_idx]);
+                release(&bcache.buf_table_locks[smaller_idx]);
                 acquiresleep(&b->lock);
                 return b;
             }
-            b = b->next;
         }
-        release(&bcache.buf_table_locks[new_table_idx]);
+
+        release(&bcache.buf_table_locks[larger_idx]);
+        release(&bcache.buf_table_locks[smaller_idx]);
     }
 
     panic("bget: no buffers");
 }
 
-void add_to_bucket(int bucket_idx, struct buf *b) {
+// move `b` from its current bucket into `bcache.buf_table[bucket_idx]`.
+// caller must hold locks for both old bucket and new bucket.
+void move_to_bucket(int bucket_idx, struct buf *b) {
     struct buf *old_l = b->prev;
     struct buf *old_r = b->next;
     if (old_l != 0) {
